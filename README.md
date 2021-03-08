@@ -4,9 +4,11 @@ This repository hosts the firmware for the Inform@Risk LoRa Nodes. More on the p
 
 All Information on the hardware setup for these nodes can be found on [www.alpgeorisk.de\test](www.alpgeorisk.de\test).
 
+<!---
 The software comprises five stages. Although these stages are fixed, multiple parameters can be changed to accommodate for varying on-site requirements. For example, the overall measurement duration as well as the measurement frequency for each sensor can be changed. These parameters can not only be changed when installing the node but also remotely via commands transmitted via LoRa communication. Also, for each sensor it is possible to decide whether median or mean values should be sent to the gateway. For example for the accelerometer, it is best to calculate the median of the measured values since it is less sensitive to outliers from external influences (e.g. vibrations, impacts). For all other values, usually mean values are chosen. The calculation is done by the microprocessor to save power and on-air time during LoRa communication, which uses the most power.
-	        
+<!---	        
 After the measurement, calculations and LoRa-uplink, the device receives an optional downlink from the gateway. This can be one of several predefined commands such as setting the looptime (time taken for measurements and time the device is asleep), changing measurement duration or activating/deactivating individual sensors on the device. After receiving commands, the device makes the changes and goes into a sleep mode, where current consumption is minimized.
+-->
 
 ## Firmware structure
 
