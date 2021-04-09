@@ -1,8 +1,8 @@
 # informrisk-lora-node
 
-This repository hosts the firmware for the Inform@Risk LoRa Nodes. More on the project on [www.alpgeorisk.de\test](www.alpgeorisk.de\test) and [the project website](https://www.bmbf-client.de/projekte/informrisk).
+This repository hosts the firmware for the Inform@Risk LoRa Nodes. More on the project on [www.informrisk.alpgeorisk.com](www.informrisk.alpgeorisk.com) and [the project website](https://www.bmbf-client.de/projekte/informrisk).
 
-All Information on the hardware setup for these nodes can be found on [www.alpgeorisk.de\test](www.alpgeorisk.de\test).
+All Information on the hardware setup for these nodes can be found on [www.informrisk.alpgeorisk.com](www.informrisk.alpgeorisk.com).
 
 <!---
 The software comprises five stages. Although these stages are fixed, multiple parameters can be changed to accommodate for varying on-site requirements. For example, the overall measurement duration as well as the measurement frequency for each sensor can be changed. These parameters can not only be changed when installing the node but also remotely via commands transmitted via LoRa communication. Also, for each sensor it is possible to decide whether median or mean values should be sent to the gateway. For example for the accelerometer, it is best to calculate the median of the measured values since it is less sensitive to outliers from external influences (e.g. vibrations, impacts). For all other values, usually mean values are chosen. The calculation is done by the microprocessor to save power and on-air time during LoRa communication, which uses the most power.
@@ -65,12 +65,11 @@ The designator (desig) defines, which type of LoRa node is used. This has implic
 ### Hardware settings
 
 These settings determine which sensor is connected to which port of the circuit board/processor. Using the PCB, this should mostly not have to be changed, except for e.g. the SMN settings.
-Every sensor/set of sensors have a "\*_MINT" variable which controls the measurement interval and a "\*_MCTR" variable which is needed to count the measurements per loop cycle. The MCTR should always be set to 1, the MINT can be set depending on the supported measurement interval of the sensor.
+Every sensor/set of sensors have a "\*_MINT" variable which controls the measurement interval and a "\*_MCTR" variable which is needed to count the measurements per loop cycle. The MINT can be set depending on the supported measurement interval of the sensor.
 
 All variables named "\*_DPORT" and "\*_APORT" determine the digital and analog port of the sensor, respectively.
 
-The settings for the ADC require....
-- [ ] Add ADC details
+Information on ADC Settings and Commands will be added here soon.
 
 
 
