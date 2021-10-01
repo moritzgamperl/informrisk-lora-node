@@ -14,6 +14,7 @@
     - ICM 20948
     - ADS1220 ADC
     - BMP388
+    - BMA456 (Subsurface Node)
   
 
 
@@ -108,12 +109,7 @@ long arr_mag_m_z[100];
 char report[170];         // Measurement report for Serial output
 char report2[170];        // SMN Measurement report for Serial output
 
-//SMN Measurement Variables
-float smn_x = 0, smn_y = 0, smn_z = 0;
-int32_t smn_temp = 0;
-
-int16_t watertbl = 0;
-float watertbl_cal;
+//SMN Measurement Variables are created in Setup, because they are not necessarily needed.
 
 
 
@@ -193,11 +189,30 @@ ads1220.avdd = 3.3;
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);
   if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);
 
-  // ACTIVATE SMN SENSORS
-  if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
-
       
+// Setup Variables for Subsurface Measurements:
 
+if(SMN == true){
+  uint16_t ok = 1;
+  if(I1A == true){
+float I1A_x = 0, I1A_y = 0, I1A_z = 0;
+int32_t I1A_temp = 0;
+  }
+  if(I2A == true({
+float I2A_x = 0, I2A_y = 0, I2A_z = 0;
+int32_t I2A_temp = 0;
+  }
+  if(I1B == true){
+float I1A_x = 0, I1A_y = 0, I1A_z = 0;
+int32_t I1A_temp = 0;
+  }
+  if(I2B == true({
+float I2B_x = 0, I2B_y = 0, I2B_z = 0;
+int32_t I2B_temp = 0;
+  }
+int16_t watertbl = 0;
+float watertbl_cal;
+}
 
     delay(sensorstarttime); // wait for sensors to startup
 
@@ -352,13 +367,6 @@ byte extrapayload1[extrapayload1size];
 
 
 
- // SMN INITIALIZE
-if (SET_SMN == 1)
-  {
-    bma456.initialize();
-  }
-
-
 if (SET_SCL == 1) {
 // Turn on Murata
       inclinometer.WakeMeUp();
@@ -494,9 +502,45 @@ if (SET_SCL == 1) {
 
       // SMN MEASUREMENT (for only one SMN)
 
-      if (SET_SMN == 1) {                    
+      if (SET_SMN == 1) {
          if (meastime >= SMN_MINT * SMN_MCTR) {
           SMN_MCTR++;
+              if (I1A == true) {
+     ok = bma456.initialize(UINT8_C(0x19));
+     Serial.print("STATUS SENSOR I1A: ");
+     Serial.println(ok);
+     delay(1000);
+     if (ok == 0) {
+      Serial.print("Subsurface Sensor I1A is working. Measuring: ")
+     bma456.getAcceleration(&x, &y, &z);  
+    temp = bma456.getTemperature();
+    Serial.print("X: ");
+    Serial.print(x);
+    Serial.print(", Y: ");
+    Serial.print(y);
+    Serial.print(", Z: ");
+    Serial.print(z);
+    Serial.print(", T: ");
+    Serial.println(temp);
+    }
+    else {
+      Serial.println("Not OK. Error Message:");
+      if ok == 1 Serial.println("BMA4_E_NULL_PTR");
+      if ok == 2 Serial.println("BMA4_E_INVALID_SENSOR");
+      if ok == 3 Serial.println("BMA4_E_CONFIG_STREAM_ERROR");
+      if ok == 4 Serial.println("BMA4_E_SELF_TEST_FAIL");
+      if ok == 5 Serial.println("BMA4_E_FOC_FAIL");
+      if ok == 6 Serial.println("BMA4_E_FAIL");
+      if ok == 7 Serial.println("BMA4_E_INT_LINE_INVALID");
+      if ok == 8 Serial.println("BMA4_E_RD_WR_LENGTH_INVALID");
+      if ok == 9 Serial.println("BMA4_E_AUX_CONFIG_FAIL");
+      if ok == 10 Serial.println("BMA4_E_SC_FIFO_HEADER_ERR");
+      if ok == 11 Serial.println("BMA4_E_SC_FIFO_CONFIG_ERR");      
+    }
+    delay(1000);
+    }
+
+          
         bma456.getAcceleration(&smn_x, &smn_y, &smn_z);
         smn_temp = bma456.getTemperature();
 
