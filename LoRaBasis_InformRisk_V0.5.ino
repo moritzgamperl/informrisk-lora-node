@@ -14,90 +14,92 @@
     - ICM 20948
     - ADS1220 ADC
     - BMP388
-    - BMA456 (Subsurface Node)
-  
-
-
 */
 
-
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
-// HEADER
+// HEADER - INCLUDE LIBRARIES/FILES
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// include Libraries, Files
-
-// for addional Arduino functions
-#include <MKRWAN.h>           //  Library: MKRWAN from Arduino - Library for Arduino MKR WAN boards
+// For Addional Arduino functions:
+#include <MKRWAN.h>                  //  Library: MKRWAN from Arduino - Library for Arduino MKR WAN boards
 LoRaModem modem;
-#include <ArduinoLowPower.h>  //  Library: Arduino Low Power - Library for Low Power mode (requires RTCZero library)
+#include <ArduinoLowPower.h>         //  Library: Arduino Low Power - Library for Low Power mode (requires RTCZero library)
 
 
-// for ICM20948
+// For ICM20948 Sensor:
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "ICM20948_WE.h"
 #define ICM20948_ADDR 0x68
 ICM20948_WE myIMU = ICM20948_WE(ICM20948_ADDR);
-
 I2Cdev I2C_M;
 
-uint8_t buffer_m[6];
 
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t mx, my, mz;
-
-// for BMP388
+// For BMP388 Sensor:
 #include "BMP388_DEV.h"
-float temperature, pressure, altitude;            // Create the temperature, pressure and altitude variables
 BMP388_DEV bmp388;         
 
-// For Step Counter
+
+// For Step Counter:
 #include "arduino_bma456.h";
 
-// For Olimex ADS1220
+
+// For Olimex ADS1220 Sensor:
 #include "agr_ads1220.h";
 agr_ads1220 ads1220;
 
-float lpot;
-float lpotvoltage;
 
-// For SCL3300
+// For SCL3300 Sensor:
 #include "SPI.h"
 #include "SCL3300.h"
 SCL3300 inclinometer;
 
 
-// Need the following define for SAMD processors
+// Need the following define for SAMD processors:
 #if defined (ARDUINO_ARCH_SAMD)
 //#define SP Serial1USB
 #endif
 
-// Setup File: Read from Flash!/Write to Flash
 
-// Files
+// TODO:Setup File - Read from Flash!/Write to Flash
+
+
+// File Includes:
 #include "arduino_secrets.h"
 #include "config.h"
 #include "array.h"
 
 
-// VARIABLES (Do not change standard values)
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
+// VARIABLE DEFINTIONS
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+float temperature, pressure, altitude;       // Create the temperature, pressure and altitude variables
+
+uint8_t buffer_m[6];                         // For
+
+int16_t ax, ay, az;                          // For acceleration values from 
+int16_t gx, gy, gz;                          // For  values from 
+int16_t mx, my, mz;                          // For  values from 
+
+float lpot;
+float lpotvoltage;
 
 // Security
-String appEui = SECRET_APP_EUI;    // Please enter your sensitive data in the Secret tab or arduino_secrets.h
-String appKey = SECRET_APP_KEY;    // Please enter your sensitive data in the Secret tab or arduino_secrets.h
+String appEui = SECRET_APP_EUI;              // Please enter your sensitive data in the Secret tab or arduino_secrets.h
+String appKey = SECRET_APP_KEY;              // Please enter your sensitive data in the Secret tab or arduino_secrets.h
+
 //Timing Variables (all are unsigned long, so overflow of millis() will also cause an overflow of the calculation of the according relative time --> result is OK)
-unsigned long loopstart = 0;       // starttime of loop (ms)
-unsigned long looptime = 0;        // relative time within current loop (ms)
-unsigned long measstart = 0;       // stattime of measurement (ms)
-unsigned long meastime = 0;        // relative time within current measurement (ms)
-unsigned long sleeptime = 0;       // time arduino will sleep until next measurement
-unsigned long loopctr = 0;         // counting the number of loops for extra payload
+unsigned long loopstart = 0;                 // starttime of loop (ms)
+unsigned long looptime = 0;                  // relative time within current loop (ms)
+unsigned long measstart = 0;                 // stattime of measurement (ms)
+unsigned long meastime = 0;                  // relative time within current measurement (ms)
+unsigned long sleeptime = 0;                 // time arduino will sleep until next measurement
+unsigned long loopctr = 0;                   // counting the number of loops for extra payload
 
 //Measurement Variables
-long meassum[22];         // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
-long arr_imu_a_x[100];          // Array with measurements for imu.a.x Qestion: How to deal with max size of Array? Here, 1000 as default
+long meassum[22];                            // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
+long arr_imu_a_x[100];                       // Array with measurements for imu.a.x Qestion: How to deal with max size of Array? Here, 1000 as default
 long arr_imu_a_y[100];
 long arr_imu_a_z[100];
 long arr_imu_g_x[100];
@@ -106,13 +108,15 @@ long arr_imu_g_z[100];
 long arr_mag_m_x[100];
 long arr_mag_m_y[100];
 long arr_mag_m_z[100];
-char report[170];         // Measurement report for Serial output
-char report2[170];        // SMN Measurement report for Serial output
-
-//SMN Measurement Variables are created in Setup, because they are not necessarily needed.
+char report[170];                            // Measurement report for Serial output
+char report2[170];                           // SMN Measurement report for Serial output
 
 
+float smn_x = 0, smn_y = 0, smn_z = 0;       //SMN Measurement Variables - velocity?
+int32_t smn_temp = 0;                        //SMN Measurement Variables - Temperature
 
+int16_t watertbl = 0;
+float watertbl_cal;
 
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -121,31 +125,23 @@ char report2[170];        // SMN Measurement report for Serial output
 
 void setup() {
 
-
-  // OPEN Serial PORT -- used for development purposes
-  SP.begin(9600);
-  // Wait 5 secs for Serial connection otherwise continue anyway...
-  while (!SP && millis() < 5000);
+  SP.begin(9600);                              // OPEN Serial PORT -- used for development purposes
+  while (!SP && millis() < 5000);              // Wait 5 secs for Serial connection otherwise continue anyway...
   Wire.begin();
-
-  // SET PINS TO -1 IF DEACTIVATED; ADC comes later
-  if (SET_IMU == 0) IMU_DPORT = -1;
+  
+  if (SET_IMU == 0) IMU_DPORT = -1;            // SET PINS TO -1 IF DEACTIVATED; ADC comes later
   //if (SET_ADC = 0) {
   if (SET_SMN == 0) StpCtr1_DPORT = -1;
 
-//ADC SETTINGS
-//TURN ON/OFF DEBUG MESSAGES
-ads1220.ads1220debug = 1;
+  //TODO : ADC SETTINGS  ???
 
-//SET ADS1220 Reference voltages (if not set, 3,3 V is default value in all cases)
-ads1220.avdd = 3.3;
-//ads1220.vref0 = 3.3;
-//ads1220.vref1 = 3.3;
+  ads1220.ads1220debug = 1;                      //TURN ON/OFF DEBUG MESSAGES
+  ads1220.avdd = 3.3;                            //SET ADS1220 Reference voltages (if not set, 3,3 V is default value in all cases)
+  //ads1220.vref0 = 3.3;
+  //ads1220.vref1 = 3.3;
   
 
-  // SETUP DIGITAL PINS
-  // initialize digital pins
-  // Set measurement pins to output, set unused pins to input_pullup
+  // ----- SETUP DIGITAL PINS ------ // - Set measurement pins to output, set unused pins to input_pullup
   SP.println("Digital ports setup:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
@@ -166,70 +162,42 @@ ads1220.avdd = 3.3;
     }
   }
 
-
-// Relais Settings
-// Relais K1
-   pinMode(A2, OUTPUT);
-   pinMode(A3, OUTPUT);
-   K1_AllOff ();
+  // ------ RELAIS SETTINGS ------ //
+  pinMode(A2, OUTPUT);                        // Relais K1
+  pinMode(A3, OUTPUT);
+  K1_AllOff ();
   
-   // Relais K2
-   pinMode(A4, OUTPUT);
-   pinMode(A5, OUTPUT);
-   K2_AllOff ();
+  pinMode(A4, OUTPUT);                        // Relais K2
+  pinMode(A5, OUTPUT);
+  K2_AllOff ();
 
-  // SETUP ANALOG INPUT
-  analogReadResolution(12);
+  analogReadResolution(12);                    // SETUP ANALOG INPUT
 
   // ACTIVATE SENSORS
-  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);
-  if (LED_DPORT >= 0) digitalWrite(LED_DPORT, HIGH);
-  if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);
-  if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);
-  if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);
-  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);
+  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);               // Activate S Sensors
+  if (LED_DPORT >= 0) digitalWrite(LED_DPORT, HIGH);                 // Activate SMN Sensors
+  if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);           // Activate SMN Sensors
+  if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);           // Activate SMN Sensors
+  if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);               // Activate SMN Sensors
+  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                 // Activate SMN Sensors
+  if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);         // Activate SMN Sensors 
 
-      
-// Setup Variables for Subsurface Measurements:
+  delay(sensorstarttime);                                            // wait for sensors to startup
 
-if(SMN == true){
-  uint16_t ok = 1;
-  if(I1A == true){
-float I1A_x = 0, I1A_y = 0, I1A_z = 0;
-int32_t I1A_temp = 0;
+  if (SET_SCL == 1) {
+  // TODO: Setup PINS MURATASC3300
+  // pinMode(SCL3300_Power_PIN, OUTPUT);
+  //pinMode(SCL3300_CS_PIN, OUTPUT);
   }
-  if(I2A == true({
-float I2A_x = 0, I2A_y = 0, I2A_z = 0;
-int32_t I2A_temp = 0;
-  }
-  if(I1B == true){
-float I1A_x = 0, I1A_y = 0, I1A_z = 0;
-int32_t I1A_temp = 0;
-  }
-  if(I2B == true({
-float I2B_x = 0, I2B_y = 0, I2B_z = 0;
-int32_t I2B_temp = 0;
-  }
-int16_t watertbl = 0;
-float watertbl_cal;
-}
-
-    delay(sensorstarttime); // wait for sensors to startup
-
-    if (SET_SCL == 1) {
-// Setup PINS MURATASC3300
-// pinMode(SCL3300_Power_PIN, OUTPUT);
-   //pinMode(SCL3300_CS_PIN, OUTPUT);
-    }
 
      
-  // CONNECT TO LORA NETWORK
-  // change this to your regional band (eg. US915, AS923, ...) For Colombia, use "US915"! For Europe, use "EU868".
-  if (!modem.begin(EU868))
+  // ------ CONNECT TO LORA NETWORK ------ //
+  if (!modem.begin(EU868))                               // Change this to your Regional Band (eg. US915, AS923, ...). For Colombia, use "US915"!. For Europe, use "EU868".
   {
     SP.println("Failed to start module");
     while (1) {}
   };
+  
   String ArdVers = modem.version();
   String DevEUI = modem.deviceEUI();
   SP.print("Your module version is: ");
@@ -237,9 +205,8 @@ float watertbl_cal;
   SP.print("Your device EUI is: ");
   SP.println(DevEUI);
 
-  // attemt to join LoRaWAN network using Over-The-Air-Activation (OTAA)
-  int connected = modem.joinOTAA(appEui, appKey);
-delay(100);
+  int connected = modem.joinOTAA(appEui, appKey);        // Attempt to Join LoRaWAN Network using Over-The-Air-Activation (OTAA)
+  delay(100);
   if (connected)
   {
     // ----- Setup Signal strength ------
@@ -248,48 +215,43 @@ delay(100);
     //      https://github.com/arduino/mkrwan1300-fw/issues/3
     //try: modem.setADR(true);
     //modem.dataRate(5);
-
-    // Set poll interval to x seconds
-    modem.minPollInterval(10);
-    delay(100);                    // because ... more stable
+    
+    modem.minPollInterval(10);     // Set poll interval to x seconds
+    delay(100);                    // For more Stable Connection
   }
   else
   {
-    SP.println("Something went wrong; are you indoors? Move near a window and retry");
+    SP.println("Something went wrong; Are you indoors? Move near a Window and Retry");
     while (1) {}
   }
 
-  SP.println("connected");
-
-
+  SP.println("Connected");
 
 }
+
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 // LOOP
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void loop() {
-
-  // PAYLOADS
-short payload1size = 35;
-byte payload1[payload1size];
-
-short extrapayload1size = 35;
-byte extrapayload1[extrapayload1size];
+void loop()
+{
+  // ------ PAYLOAD DECLARATIONS ------ //
+  short payload1size = 35;
+  byte payload1[payload1size];
+  short extrapayload1size = 35;
+  byte extrapayload1[extrapayload1size];
   
-
-  loopctr++;
-
-  //MEASUREMENT LOOP
-  loopstart = millis();
+  loopctr++;                                   // Loop Counter
+  
+  loopstart = millis();                        //MEASUREMENT LOOP
   SP.println();
   SP.print("New Measurement, Starttime: ");
   SP.println(loopstart);
   //Wire.begin();
 
-  // ACTIVATE SENSORS
-  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);
+  // ------- ACTIVATE SENSORS ------- //
+  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);            
   if (LED_DPORT >= 0) digitalWrite(LED_DPORT, HIGH);
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);
@@ -297,19 +259,19 @@ byte extrapayload1[extrapayload1size];
   if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);
   if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
 
+  // ------ INITIALIZE ADS1220 ------ //
   if (SET_ADC == 1){
-   //INITIALIZE ADS1220
   SP.println("ADS1220 Initialization...");
   if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
   else {SP.println("ADS1220 was NOT initialized successfully!");}
   SP.println();
-    
-    if (ADC_CAL == 1){
-    //CALIBRATE ADS1220
+
+  // ------ CALIBRATE ADS1220 ------ //
+  if (ADC_CAL == 1){
   SP.println("ADS1220 Calibration (this may take a few seconds)...");
   ads1220.calibrate();
   SP.println();
-    }
+  }
   ads1220.config_datarate(DR_20SPS);
   ads1220.config_opmode(OM_NORMAL);
   ads1220.config_conmode(CM_SINGLE_SHOT);
@@ -320,7 +282,7 @@ byte extrapayload1[extrapayload1size];
   ads1220.config_idac_cur(IDAC_CUR_500);
   ads1220.config_idac1(IDAC1_REFN0);
   //ads1220.config_idac2(IDAC2_AIN3);
-  //delay(200); //Delay to powerup IDAC - removed because of sensorstarttime
+  //delay(200);                                          //Delay to powerup IDAC - removed because of sensorstarttime
   //GET INITIAL VALUES
   //int32_t lpotdata = ads1220.read_single_shot();
   //lpotvoltage = ads1220.dac2mv(lpotdata);
@@ -328,27 +290,24 @@ byte extrapayload1[extrapayload1size];
   }
   else ads1220.powerdown();
 
-  delay(sensorstarttime); // wait for sensors to startup
+  delay(sensorstarttime);                                // Wait for Sensors to Startup
   SP.println("BREAK: sensors should be started");
 
-  // -------------------------------------------------------------------------------------------------------------------------------------------------------
-  //INITIALIZE SENSORS AFTER POWERUP
-
- // IMU INITIALIZE
-     if (IMU_DPORT >= 0) {  
-      if(!myIMU.init()){
-    Serial.println("ICM20948 does not respond");
-  }
   
-  else{
-    Serial.println("ICM20948 is connected");
-  }
-      if(!myIMU.initMagnetometer()){
-    Serial.println("Magnetometer does not respond");
-  }
-  else{
-    Serial.println("Magnetometer is connected");
-  }
+  // ------ INITIALIZE SENSORS AFTER POWERUP ------ //
+  if (IMU_DPORT >= 0) {                                  // IMU INITIALIZE
+    if(!myIMU.init()){
+      Serial.println("ICM20948 does not respond");
+    }
+    else{
+      Serial.println("ICM20948 is connected");
+    }
+    if(!myIMU.initMagnetometer()){
+      Serial.println("Magnetometer does not respond");
+    }
+    else{
+      Serial.println("Magnetometer is connected");
+    }
 
     myIMU.setAccRange(ICM20948_ACC_RANGE_2G);
     myIMU.setAccDLPF(ICM20948_DLPF_6);    
@@ -358,34 +317,32 @@ byte extrapayload1[extrapayload1size];
     myIMU.setMagOpMode(AK09916_CONT_MODE_20HZ);
   }
 
-//  BMP INITIALIZE
 
-  bmp388.begin();                                 // Default initialisation, place the BMP388 into SLEEP_MODE 
-  bmp388.setTimeStandby(TIME_STANDBY_1280MS);     // Set the standby time to 1.3 seconds
-  bmp388.startNormalConversion();                 // Start BMP388 continuous conversion in NORMAL_MODE  
-      
+  bmp388.begin();                                        //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE 
+  bmp388.setTimeStandby(TIME_STANDBY_1280MS);                                 // Set the standby time to 1.3 seconds
+  bmp388.startNormalConversion();                                             // Start BMP388 continuous conversion in NORMAL_MODE  
+  
+
+  if (SET_SMN == 1){                                      // SMN INITIALIZE
+    bma456.initialize();
+  }
 
 
+  if (SET_SCL == 1) {
+    inclinometer.WakeMeUp();                              // Turn on Murata
+    //digitalWrite(SCL3300_Power_PIN, HIGH);
+    delay(10);
 
-if (SET_SCL == 1) {
-// Turn on Murata
-      inclinometer.WakeMeUp();
-//    digitalWrite(SCL3300_Power_PIN, HIGH);
-      delay(10);
-
-  // SETUP MURATA
-    if (inclinometer.begin(scl3300_sspin) == false) {
+    if (inclinometer.begin(scl3300_sspin) == false) {                  // SETUP MURATA
       SP.println("Murata SCL3300 inclinometer not connected.");
-      while(1); //Freeze
+      while(1);                                                        //Freeze
     }
     inclinometer.setMode(scl3300_mode);
-}
+  }
 
 
-  // -------------------------------------------------------------------------------------------------------------------------------------------------------
-  //MEASUREMENTS
-  //Reset Timing & Counters
-  measstart = millis();
+  // ------ MEASUREMENTS ------ //  
+  measstart = millis();                                                 //Reset Timing & Counters
   BATT_MCTR = 1;
   IMU_MCTR = 1;
   MAG_MCTR = 1;
@@ -395,98 +352,79 @@ if (SET_SCL == 1) {
   ADC_MCTR = 1;
   SP.println("BREAK: Measurement started, counters set to 1");
 
-
-  //Reset Measurent Variables
-  for (int i = 0; i <= 21; i++)
-  {
-    meassum[i] = 0;
+  for (int i = 0; i <= 21; i++){
+    meassum[i] = 0;                                                    //Reset Measurent Variables
   }
-
-
 
   while (millis() - measstart <= measlength)
   {
     meastime = millis() - measstart;
-
-    // BATT VOLTAGE MEASUREMENT
-    if (BATT_DPORT >= 0) {
-      if (meastime >= BATT_MINT * BATT_MCTR) {
-        BATT_MCTR++;
-        // Read Analog Port
-        int batt = analogRead(BATT_APORTin);
-        meassum[0] = meassum[0] + batt;
-        SP.print("BREAK: Battery voltage finished:");
-        SP.println(batt);
-      }
+    
+    if (BATT_DPORT >= 0 && meastime >= BATT_MINT * BATT_MCTR) {        // BATT VOLTAGE MEASUREMENT
+      BATT_MCTR++;
+      int batt = analogRead(BATT_APORTin);                             // Read Analog Port
+      meassum[0] = meassum[0] + batt;
+      SP.print("BREAK: Battery voltage finished:");
+      SP.println(batt);
     }
 
-    // IMU MEASUREMENT
-        if (IMU_DPORT >= 0) {
-      if (meastime >= IMU_MINT * IMU_MCTR) {
-        IMU_MCTR++;
-        
-        // ----- Get IMU data -----
-        myIMU.readSensor();
-        xyzFloat gValue = myIMU.getGValues();
-        xyzFloat gyr = myIMU.getGyrValues();
-        xyzFloat magValue = myIMU.getMagValues();
-        float imu_temp = myIMU.getTemperature();
-        float resultantG = myIMU.getResultantG(gValue);
-        
-        SP.println("Measuring IMU....");
-        SP.print(gValue.x);
-        
-        meassum[1] = meassum[1] + gValue.x;
-        meassum[2] = meassum[2] + gValue.y;
-        meassum[3] = meassum[3] + gValue.z;
-        meassum[4] = meassum[4] + gyr.x;
-        meassum[5] = meassum[5] + gyr.y;
-        meassum[6] = meassum[6] + gyr.z;
-        meassum[7] = meassum[7] + magValue.x;
-        meassum[8] = meassum[8] + magValue.y;
-        meassum[9] = meassum[9] + magValue.z;
-        // Median:
-        arr_imu_a_x[IMU_MCTR - 1] = gValue.x;
-        arr_imu_a_y[IMU_MCTR - 1] = gValue.y;
-        arr_imu_a_z[IMU_MCTR - 1] = gValue.z;
-        arr_imu_g_x[IMU_MCTR - 1] = gyr.x;
-        arr_imu_g_y[IMU_MCTR - 1] = gyr.y;
-        arr_imu_g_z[IMU_MCTR - 1] = gyr.z;
-        arr_mag_m_x[MAG_MCTR - 1] = magValue.x;
-        arr_mag_m_y[MAG_MCTR - 1] = magValue.y;
-        arr_mag_m_z[MAG_MCTR - 1] = magValue.z;
-      }
-
-      // BARO MEASUREMENT
-      if (meastime >= BARO_MINT * BARO_MCTR) {
-
-        BARO_MCTR++;
-          if (bmp388.getMeasurements(temperature, pressure, altitude))    // Check if the measurement is complete
-      {
-    Serial.print(temperature);                    // Display the results    
-    Serial.print(F("*C   "));
-    Serial.print(pressure);    
-    Serial.print(F("hPa   "));
-    Serial.print(altitude);
-    Serial.println(F("m"));  
-      }
-        meassum[10] = meassum[10] + round(temperature*10);
-        meassum[11] = meassum[11] + round(pressure / 100); // Pa div. 100 equ. hPa = mBar
-      }
-    }
-
+    if (IMU_DPORT >= 0 && meastime >= IMU_MINT * IMU_MCTR) {           // IMU MEASUREMENT
+      IMU_MCTR++;
+      SP.println("Measuring IMU....");
       
-
-      // SCL inclinometer measurement
-    if (SET_SCL == 1){
-     if (meastime >= INKL_MINT * INKL_MCTR) {
-      INKL_MCTR++;
-       if (inclinometer.begin(scl3300_sspin) == false) {
-      SP.println("Murata SCL3300 inclinometer not connected.");
-      while(1); //Freeze
+      myIMU.readSensor();                                              // Get IMU Sensor Data
+      xyzFloat gValue = myIMU.getGValues();
+      xyzFloat gyr = myIMU.getGyrValues();
+      xyzFloat magValue = myIMU.getMagValues();
+      float imu_temp = myIMU.getTemperature();
+      float resultantG = myIMU.getResultantG(gValue);
+    
+      SP.print(gValue.x);
+      
+      meassum[1] = meassum[1] + gValue.x;                              // Adding Measured Values to the Measurement Array Variable
+      meassum[2] = meassum[2] + gValue.y; 
+      meassum[3] = meassum[3] + gValue.z;
+      meassum[4] = meassum[4] + gyr.x;
+      meassum[5] = meassum[5] + gyr.y;
+      meassum[6] = meassum[6] + gyr.z;
+      meassum[7] = meassum[7] + magValue.x;
+      meassum[8] = meassum[8] + magValue.y;
+      meassum[9] = meassum[9] + magValue.z;
+      
+      arr_imu_a_x[IMU_MCTR - 1] = gValue.x;                            // To calculate the Median??
+      arr_imu_a_y[IMU_MCTR - 1] = gValue.y;
+      arr_imu_a_z[IMU_MCTR - 1] = gValue.z;
+      arr_imu_g_x[IMU_MCTR - 1] = gyr.x;
+      arr_imu_g_y[IMU_MCTR - 1] = gyr.y;
+      arr_imu_g_z[IMU_MCTR - 1] = gyr.z;
+      arr_mag_m_x[MAG_MCTR - 1] = magValue.x;
+      arr_mag_m_y[MAG_MCTR - 1] = magValue.y;
+      arr_mag_m_z[MAG_MCTR - 1] = magValue.z;
+    }  
+    
+    if (IMU_DPORT >= 0 && meastime >= BARO_MINT * BARO_MCTR) {                         // BARO MEASUREMENT
+      BARO_MCTR++;
+      if (bmp388.getMeasurements(temperature, pressure, altitude))   // Check if the measurement is complete
+      {
+        Serial.print(temperature);                                   // Display the results    
+        Serial.print(F("*C   "));
+        Serial.print(pressure);    
+        Serial.print(F("hPa   "));
+        Serial.print(altitude);
+        Serial.println(F("m"));  
+       }
+       meassum[10] = meassum[10] + round(temperature*10);
+       meassum[11] = meassum[11] + round(pressure / 100);            // Pa div. 100 equ. hPa = mBar
     }
-    inclinometer.setMode(scl3300_mode);
-                delay(1);
+
+    if (SET_SCL == 1 && meastime >= INKL_MINT * INKL_MCTR){            // SCL Inclinometer Measurement
+      INKL_MCTR++;
+      if (inclinometer.begin(scl3300_sspin) == false) {
+        SP.println("Murata SCL3300 inclinometer not connected.");
+        while(1);                                                      //Freeze
+      }
+      inclinometer.setMode(scl3300_mode);
+      delay(1);
       if (inclinometer.available()) {
         float incl_raw_x = (inclinometer.getTiltLevelOffsetAngleX());
         float incl_raw_y = (inclinometer.getTiltLevelOffsetAngleY());
@@ -496,119 +434,69 @@ if (SET_SCL == 1) {
         meassum[15] = meassum[15] + round(incl_raw_z*1000);
       } 
       else inclinometer.reset();
-         delay(10);
-    }
-    }
-
-      // SMN MEASUREMENT (for only one SMN)
-
-      if (SET_SMN == 1) {
-         if (meastime >= SMN_MINT * SMN_MCTR) {
-          SMN_MCTR++;
-              if (I1A == true) {
-     ok = bma456.initialize(UINT8_C(0x19));
-     Serial.print("STATUS SENSOR I1A: ");
-     Serial.println(ok);
-     delay(1000);
-     if (ok == 0) {
-      Serial.print("Subsurface Sensor I1A is working. Measuring: ")
-     bma456.getAcceleration(&x, &y, &z);  
-    temp = bma456.getTemperature();
-    Serial.print("X: ");
-    Serial.print(x);
-    Serial.print(", Y: ");
-    Serial.print(y);
-    Serial.print(", Z: ");
-    Serial.print(z);
-    Serial.print(", T: ");
-    Serial.println(temp);
-    }
-    else {
-      Serial.println("Not OK. Error Message:");
-      if ok == 1 Serial.println("BMA4_E_NULL_PTR");
-      if ok == 2 Serial.println("BMA4_E_INVALID_SENSOR");
-      if ok == 3 Serial.println("BMA4_E_CONFIG_STREAM_ERROR");
-      if ok == 4 Serial.println("BMA4_E_SELF_TEST_FAIL");
-      if ok == 5 Serial.println("BMA4_E_FOC_FAIL");
-      if ok == 6 Serial.println("BMA4_E_FAIL");
-      if ok == 7 Serial.println("BMA4_E_INT_LINE_INVALID");
-      if ok == 8 Serial.println("BMA4_E_RD_WR_LENGTH_INVALID");
-      if ok == 9 Serial.println("BMA4_E_AUX_CONFIG_FAIL");
-      if ok == 10 Serial.println("BMA4_E_SC_FIFO_HEADER_ERR");
-      if ok == 11 Serial.println("BMA4_E_SC_FIFO_CONFIG_ERR");      
-    }
-    delay(1000);
+      delay(10);
     }
 
+    if (SET_SMN == 1 && meastime >= SMN_MINT * SMN_MCTR){               // SMN MEASUREMENT (for only one SMN)
+      SMN_MCTR++;
+      bma456.getAcceleration(&smn_x, &smn_y, &smn_z);
+      smn_temp = bma456.getTemperature();
+
+      meassum[16] = meassum[16] + smn_x;
+      meassum[17] = meassum[17] + smn_y;
+      meassum[18] = meassum[18] + smn_z;
+      meassum[19] = meassum[19] + smn_temp;
+      
+    }
+    delay(50);                                                          // DELAY after every measurement cycle
+  }
+
+  if (SET_SCL == 1){                                                    // Turn off Murata
+    //digitalWrite(SCL3300_Power_PIN, LOW);
+    digitalWrite(SCL3300_CS_PIN, HIGH);
+    inclinometer.powerDownMode();
+  }
+
+  while(ADC_MCTR < 10){                                                 // ADC MEASUREMENT
+    ADC_MCTR++;
+    if (SET_ADC == 1){
+      if (ADS_C1 == 1){                                                 //CHannel 1 measurement (4-20 mA):
+        SP.println("ADS1220 Initialization...");
+        if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
+        else {SP.println(("ADS1220 was NOT initialized successfully!"));}
+      SP.println();
           
-        bma456.getAcceleration(&smn_x, &smn_y, &smn_z);
-        smn_temp = bma456.getTemperature();
-
-        meassum[16] = meassum[16] + smn_x;
-        meassum[17] = meassum[17] + smn_y;
-        meassum[18] = meassum[18] + smn_z;
-        meassum[19] = meassum[19] + smn_temp;
+      delay(10);                                                        
+      ads1220.config_mux(SE_CH0);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      int32_t ssdata = ads1220.read_single_shot();
+      float voltage = ads1220.dac2mv(ssdata);
+      float current = voltage/150;
+      float mbar = 800 + (260/16*(current-4)); 
+      SP.print("SSDATA: ");
+      SP.print(ssdata);
+      SP.print("C1 voltage: ");
+      SP.print(voltage);
+      SP.print("C1 mV -- current: ");
+      SP.print(current);
+      SP.println(" mbar");  
+      }  
+      if (ADS_C2 == 1){                                                 // Channel 2 measurement (Potentiometer):      
+      ads1220.config_mux(SE_CH2);
+      ads1220.config_gain(PGA_GAIN_4);
+      ads1220.config_pga(PGA_ON);
+      int32_t lpotdata = ads1220.read_single_shot();
+      lpotvoltage = ads1220.dac2mv(lpotdata);
+      SP.print(lpotvoltage);
+      SP.println(" C2 ipotvoltage");  
       }
-      }
-    
-    // DELAY after every measurement cycle
-    delay(50);
+    }
   }
 
-
-  if (SET_SCL == 1){
-// Turn off Murata
-//    digitalWrite(SCL3300_Power_PIN, LOW);
-      digitalWrite(SCL3300_CS_PIN, HIGH);
-      inclinometer.powerDownMode();
-  }
-
-   // ADC MEASUREMENT
-
-while(ADC_MCTR < 10){
-            ADC_MCTR++;
-      if (SET_ADC == 1)
-      {
-        if (ADS_C1 == 1){
-            SP.println("ADS1220 Initialization...");
-  if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
-  else {SP.println("ADS1220 was NOT initialized successfully!");}
-  SP.println();
-          //CHannel 1 measurement (4-20 mA):
-delay(10);
-    ads1220.config_mux(SE_CH0);
-    ads1220.config_gain(PGA_GAIN_1);
-    ads1220.config_pga(PGA_OFF);
-    int32_t ssdata = ads1220.read_single_shot();
-    float voltage = ads1220.dac2mv(ssdata);
-    float current = voltage/150;
-    float mbar = 800 + (260/16*(current-4)); 
-    SP.print("SSDATA: ");
-    SP.print(ssdata);
-    SP.print("C1 voltage: ");
-    SP.print(voltage);
-    SP.print("C1 mV -- current: ");
-    SP.print(current);
-    SP.println(" mbar");  
-          }
-            
-          if (ADS_C2 == 1){
-          // Channel 2 measurement (Potentiometer): 
-    ads1220.config_mux(SE_CH2);
-    ads1220.config_gain(PGA_GAIN_4);
-    ads1220.config_pga(PGA_ON);
-    int32_t lpotdata = ads1220.read_single_shot();
-    lpotvoltage = ads1220.dac2mv(lpotdata);
-    SP.print(lpotvoltage);
-    SP.println(" C2 ipotvoltage");  
-           }
-      }
-}
-
-SP.println("MEASUREMENT END");
-  // -------------------------------------------------------------------------------------------------------------------------------------------------------
-  // MEASUREMENT END
-  // DEACTIVATE SENSORS
+  // ------ MEASUREMENT END AND DEACTIVATING SENSORS ------ //
+  
+  SP.println("MEASUREMENT END");
   if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, LOW);
   if (LED_DPORT >= 0) digitalWrite(LED_DPORT, LOW);
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, LOW);
@@ -617,18 +505,16 @@ SP.println("MEASUREMENT END");
   if (SET_ADC == 1) ads1220.powerdown();
   if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, LOW);
     
-   if (SET_SMN == 1) 
-  {
+   if (SET_SMN == 1) {
     if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, LOW); 
   }
 
 
-  //Display measurement duration
-  SP.print("Measurement duration inkl. initialization (sensors on): ");
+  SP.print("Measurement duration inkl. initialization (sensors on): ");         //Display measurement duration
   SP.println(millis() - loopstart);
 
-  //Calculate averages
-  int16_t battv = round(meassum[0] / (BATT_MCTR - 1));
+
+  int16_t battv = round(meassum[0] / (BATT_MCTR - 1));                          //Calculate averages
   int16_t imuax = round(meassum[1] / (IMU_MCTR - 1));
   int16_t imuay = round(meassum[2] / (IMU_MCTR - 1));
   int16_t imuaz = round(meassum[3] / (IMU_MCTR - 1));
@@ -648,10 +534,8 @@ SP.println("MEASUREMENT END");
   int16_t smn1_y = round(meassum[17] / (SMN_MCTR - 1));
   int16_t smn1_z = round(meassum[18] / (SMN_MCTR - 1));
   int16_t smn1_temp = round(meassum[19] / (SMN_MCTR - 1));
-  
-  //Calculate medians
 
-  int16_t med_imu_a_x = int(Array_median(arr_imu_a_x, IMU_MCTR));
+  int16_t med_imu_a_x = int(Array_median(arr_imu_a_x, IMU_MCTR));                //Calculate medians
   int16_t med_imu_a_y = int(Array_median(arr_imu_a_y, IMU_MCTR));
   int16_t med_imu_a_z = int(Array_median(arr_imu_a_z, IMU_MCTR));
   int16_t med_imu_g_x = int(Array_median(arr_imu_g_x, IMU_MCTR));
@@ -662,12 +546,10 @@ SP.println("MEASUREMENT END");
   int16_t med_imu_m_z = int(Array_median(arr_mag_m_z, IMU_MCTR));
 
   SP.println("BREAK: Medians, Averages calculated");
-  
-  //Calculate battvolt
-  int8_t battery = 10 * battv * 3.3 / 4095 * (BATT_R1 + BATT_R2) / (BATT_R1); // is 10 times the battery voltage in volts
-  // Create byte array to send (see https://www.thethingsnetwork.org/docs/devices/bytes.html for byte encoding examples)
-
-  payload1[0] = payload1size;
+                                                                                 
+  int8_t battery = 10 * battv * 3.3 / 4095 * (BATT_R1 + BATT_R2) / (BATT_R1);    // Calculate battvolt - 10 times the battery voltage in volts
+                                                                                 
+  payload1[0] = payload1size;                                                    // Create byte array to send (see https://www.thethingsnetwork.org/docs/devices/bytes.html for byte encoding examples)
   payload1[1] = highByte(desig);
   payload1[2] = lowByte(desig);
   payload1[3] = highByte(settings_desig);
@@ -692,8 +574,7 @@ SP.println("MEASUREMENT END");
   payload1[13] = highByte(imugz);
   payload1[14] = lowByte(imugz);
   
-  //EXTRA PAYLOAD1
-  extrapayload1[3] = highByte(imuay);
+  extrapayload1[3] = highByte(imuay);                                               //EXTRA PAYLOAD1
   extrapayload1[4] = lowByte(imuay);
   extrapayload1[7] = highByte(imugx);
   extrapayload1[8] = lowByte(imugx);
@@ -708,9 +589,7 @@ SP.println("MEASUREMENT END");
   extrapayload1[17] = highByte(magmz);
   extrapayload1[18] = lowByte(magmz);
   
-  
-  // Display data on SP port
-  sprintf(report, "Batt: %6d; IMU: A: %6d %6d %6d; G: %6d %6d %6d; M: %6d %6d %6d; INCL: %6d %6d %6d; T: %6d; P: %6d",
+  sprintf(report, "Batt: %6d; IMU: A: %6d %6d %6d; G: %6d %6d %6d; M: %6d %6d %6d; INCL: %6d %6d %6d; T: %6d; P: %6d",            // Display data on SP port
           battery,
           imuax, imuay, imuaz,
           imugx, imugy, imugz,
@@ -729,85 +608,72 @@ SP.println("MEASUREMENT END");
   SP.println();
   }
 
-  // Display raw data on SP port
-   //SP.write(payload,payloadsize);
-   //SP.println();
+  //SP.write(payload,payloadsize);                       // Display raw data on SP port
+  //SP.println();
 
-  // SEND DATA VIA LoRa
-  // Reset commands every loop!
-  String commands[10]; // Maximum number of commands per message = 10
-  String values[10];   // Maximum number of commands per message = 10
-  int m = 0;           // Command counter
+
+  // ------ SEND DATA VIA LoRa ------ //                 //Reset commands every loop
+  String commands[10];                                   // Maximum number of commands per message = 10
+  String values[10];                                     // Maximum number of commands per message = 10
+  int m = 0;                                             // Command counter
   int err;
-
-  // Set dataRate manually - usually deactivated to allow for automatic data rate adaptation depending on signal to noise ratio
-  //modem.dataRate(5);             // 5: switch to SF7
-  delay(100);                    // because ... more stable
-  // modem.beginPacket startet das Packet das mit LoRa versendet wird
-  modem.beginPacket();
-
-  // Determining payload to be sent to modem         
-  if (loopctr < extrafreq)
-    {        
-  if (desig == 1) 
-  {
-    SP.println("LoRa Infrastructure Node");
-    modem.write(payload1, payload1size);
-  }
-/*  if (desig == 2) 
-  {
-    SP.println("Subsurface Measurement Node");
-    modem.write(payload2, payload2size);
-  } */
+  
+  //modem.dataRate(5);                                   // Set dataRate manually: Usually deactivated to allow for automatic data rate adaptation depending on signal to Noise Ratio, 5: switch to SF7
+  delay(100);                                            // For more Stable Connection
+  modem.beginPacket();                                   // modem.beginPacket startet das Packet das mit LoRa versendet wird
+         
+  if (loopctr < extrafreq){                               // Determining payload to be sent to modem          
+    if (desig == 1) {
+      SP.println("LoRa Infrastructure Node");
+      modem.write(payload1, payload1size);
     }
-
-
-  //wenn modem.endPacket(true), dann confirmed data up!
-  err = modem.endPacket(true);
-  if (err > 0)
-  {
+    /*if (desig == 2){
+      SP.println("Subsurface Measurement Node");
+      modem.write(payload2, payload2size);
+    } */
+  }
+  err = modem.endPacket(true);                            //When modem.endPacket(true), then confirmed data sent!
+  if (err > 0){
     SP.println("Message sent correctly!");
   }
-  else
-  {
+  else{
     SP.println("Error sending message :(");
     SP.println("(you may send a limited amount of messages per minute, depending on the signal strength");
     SP.println("it may vary from 1 message every couple of seconds to 1 message every minute)");
   }
 
-  // ----- CHECK if data upload was recieved -----
-  if (!modem.available())
-  {
+
+  // ------ CHECK DATA UPLOAD ------  //
+  if (!modem.available()){                                
     SP.println("No downlink message received at this time.");
   }
-  else
-  {
+  else{
     char rcv[64];
     int i = 0;
-    while (modem.available())
-    {
+    while (modem.available()){
       rcv[i++] = (char)modem.read();
     }
+    SP.print("Message Received: ");                        // PRINT DATA
 
-    // PRINT DATA
-    SP.print("Message Received: ");
+    /*
     // PRINT AS HEX CHAR by CHAR
-    // for (unsigned int j = 0; j < i; j++) {
-    // SP.print(rcv[j] >> 4, HEX);
-    // SP.print(rcv[j] & 0xF, HEX);
-    // SP.print(" ");
-    // }
-
-    // PRINT AS TXT
-    String RcvStr = "";
+    for (unsigned int j = 0; j < i; j++) {
+    SP.print(rcv[j] >> 4, HEX);
+    SP.print(rcv[j] & 0xF, HEX);
+    SP.print(" ");
+    }
+    */
+ 
+    String RcvStr = "";                                    // PRINT AS TXT
     for (unsigned int j = 0; j < i; j++) {
       RcvStr = RcvStr + rcv[j];
     }
     SP.println(RcvStr);
     SP.println();
 
-    // ANALYSE DATA
-    SP.println("Checking for commands..."); // Commands have following stucture: COMMAND:VALUE;COMMAND:VALUE;COMMAND:VALUE;
+
+    // ------ ANALYSE DATA ------ //
+    SP.println("Checking for commands...");                // Commands have following stucture: COMMAND:VALUE;COMMAND:VALUE;COMMAND:VALUE;
     int k = RcvStr.length();
     int l = 0;
     while (k > 0) {
@@ -837,12 +703,10 @@ SP.println("MEASUREMENT END");
   }
 
 
-  // PARSE COMMANDS
+  // ------ PARSE COMMANDS ------ //
   for (int i = 0; i < m; i++) {
     SP.println("Processing Command: " + commands[i] + " ,Value: " + values[i]);
-
-    // COMMAND MInt
-    if (commands[i] == "MInt") {
+    if (commands[i] == "MInt") {                                                     // COMMAND MInt
       if ((values[i].toInt() >= 1) && (values[i].toInt() <= 31536000)) {
         loopintv = (values[i].toInt() * 1000);
         SP.println("Measurement interval has been set to " + values[i] + " s");
@@ -851,16 +715,14 @@ SP.println("MEASUREMENT END");
         SP.println("Error! Wrong measurement interval value: " + values[i]);
       }
     }
-
-    // COMMAND Not Recognized
-    else {
+    else {                                                                           // COMMAND Not Recognized
       SP.println("Command was not recognized!");
     }
     SP.println();
   }
 
-  // -------------------------------------------------------------------------------------------------------------------------------------------------------
-  // END of LOOP: send Arduino to low power state
+
+  // ------ END of LOOP: Set Arduino to Low Power State ------ //
   delay(100);
   looptime = millis() - loopstart;
   SP.write("Loop duration: ");
@@ -876,7 +738,7 @@ SP.println("MEASUREMENT END");
   }
 
   
-  // SET DIGITAL PORTS FOR SLEEP
+  // ------ SET DIGITAL PORTS FOR SLEEP ------ //
   SP.println("Setting digital ports for sleep:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
@@ -893,7 +755,7 @@ SP.println("MEASUREMENT END");
   //delay(sleeptime);
   LowPower.deepSleep(sleeptime);
 
-  // SET DIGITAL PORTS FOR WAKEUP
+  // ------ SET DIGITAL PORTS FOR WAKEUP ------ //
   SP.println("Setting digital ports for wakeup:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
@@ -908,32 +770,32 @@ SP.println("MEASUREMENT END");
 
 }
 
-void K1_AllOff () {
-  digitalWrite(A2, LOW);
+void K1_AllOff () {             // turn on pullup resistors
+  digitalWrite(A2, LOW);        
   digitalWrite(A3, LOW);
 }
 
-void K1_TurnA () {
-  digitalWrite(A2, HIGH);       // turn on pullup resistors
-  digitalWrite(A3, LOW);       // turn on pullup resistors
+void K1_TurnA () {              // turn on pullup resistors
+  digitalWrite(A2, HIGH);       
+  digitalWrite(A3, LOW);      
 }
 
-void K1_TurnB () {
-  digitalWrite(A2, LOW);       // turn on pullup resistors
-  digitalWrite(A3, HIGH);       // turn on pullup resistors
+void K1_TurnB () {              // turn on pullup resistors
+  digitalWrite(A2, LOW);        
+  digitalWrite(A3, HIGH);      
 }
 
-void K2_AllOff () {
+void K2_AllOff () {             // turn on pullup resistors
   digitalWrite(A4, LOW);
   digitalWrite(A5, LOW);
 }
 
-void K2_TurnA () {
-  digitalWrite(A4, HIGH);       // turn on pullup resistors
-  digitalWrite(A5, LOW);       // turn on pullup resistors
+void K2_TurnA () {              // turn on pullup resistors
+  digitalWrite(A4, HIGH);       
+  digitalWrite(A5, LOW);       
 }
 
-void K2_TurnB () {
-  digitalWrite(A4, LOW);       // turn on pullup resistors
-  digitalWrite(A5, HIGH);       // turn on pullup resistors
+void K2_TurnB () {              // turn on pullup resistors
+  digitalWrite(A4, LOW);       
+  digitalWrite(A5, HIGH);       
 }
