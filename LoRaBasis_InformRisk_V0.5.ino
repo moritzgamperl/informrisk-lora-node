@@ -20,13 +20,12 @@
 // HEADER - INCLUDE LIBRARIES/FILES
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// For Addional Arduino functions:
 #include <MKRWAN.h>                  //  Library: MKRWAN from Arduino - Library for Arduino MKR WAN boards
 LoRaModem modem;
 #include <ArduinoLowPower.h>         //  Library: Arduino Low Power - Library for Low Power mode (requires RTCZero library)
 
 
-// For ICM20948 Sensor:
+// ------ ICM20948 Sensor ------ //
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "ICM20948_WE.h"
@@ -35,103 +34,55 @@ ICM20948_WE myIMU = ICM20948_WE(ICM20948_ADDR);
 I2Cdev I2C_M;
 
 
-// For BMP388 Sensor:
+// ------ BMP388 Sensor ------ //
 #include "BMP388_DEV.h"
 BMP388_DEV bmp388;         
 
 
-// For Step Counter:
+// ------ Step Counter ------ //
 #include "arduino_bma456.h";
 
 
-// For Olimex ADS1220 Sensor:
+// ------ Olimex ADS1220 Sensor ------ //
 #include "agr_ads1220.h";
 agr_ads1220 ads1220;
 
 
-// For SCL3300 Sensor:
+// ------ SCL3300 Sensor ------ //
 #include "SPI.h"
 #include "SCL3300.h"
 SCL3300 inclinometer;
 
 
-// Need the following define for SAMD processors:
+// ------ Define for SAMD processors ------ //
 #if defined (ARDUINO_ARCH_SAMD)
 //#define SP Serial1USB
 #endif
-
-
-// TODO:Setup File - Read from Flash!/Write to Flash
-
-
-// File Includes:
+                                                                        // TODO:Setup File - Read from Flash!/Write to Flash
+// ------ Custom Header Includes ------ //
 #include "arduino_secrets.h"
-#include "config.h"
 #include "array.h"
+#include "Uni_Config.h"
+#include "IMU_Config.h"
+#include "SMN_Config.h"
+#include "ADC_Config.h"
 
 
-// -------------------------------------------------------------------------------------------------------------------------------------------------------
-// VARIABLE DEFINTIONS
-// -------------------------------------------------------------------------------------------------------------------------------------------------------
-
-float temperature, pressure, altitude;       // Create the temperature, pressure and altitude variables
-
-uint8_t buffer_m[6];                         // For
-
-int16_t ax, ay, az;                          // For acceleration values from 
-int16_t gx, gy, gz;                          // For  values from 
-int16_t mx, my, mz;                          // For  values from 
-
-float lpot;
-float lpotvoltage;
-
-// Security
-String appEui = SECRET_APP_EUI;              // Please enter your sensitive data in the Secret tab or arduino_secrets.h
-String appKey = SECRET_APP_KEY;              // Please enter your sensitive data in the Secret tab or arduino_secrets.h
-
-//Timing Variables (all are unsigned long, so overflow of millis() will also cause an overflow of the calculation of the according relative time --> result is OK)
-unsigned long loopstart = 0;                 // starttime of loop (ms)
-unsigned long looptime = 0;                  // relative time within current loop (ms)
-unsigned long measstart = 0;                 // stattime of measurement (ms)
-unsigned long meastime = 0;                  // relative time within current measurement (ms)
-unsigned long sleeptime = 0;                 // time arduino will sleep until next measurement
-unsigned long loopctr = 0;                   // counting the number of loops for extra payload
-
-//Measurement Variables
-long meassum[22];                            // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
-long arr_imu_a_x[100];                       // Array with measurements for imu.a.x Qestion: How to deal with max size of Array? Here, 1000 as default
-long arr_imu_a_y[100];
-long arr_imu_a_z[100];
-long arr_imu_g_x[100];
-long arr_imu_g_y[100];
-long arr_imu_g_z[100];
-long arr_mag_m_x[100];
-long arr_mag_m_y[100];
-long arr_mag_m_z[100];
-char report[170];                            // Measurement report for Serial output
-char report2[170];                           // SMN Measurement report for Serial output
-
-
-float smn_x = 0, smn_y = 0, smn_z = 0;       //SMN Measurement Variables - velocity?
-int32_t smn_temp = 0;                        //SMN Measurement Variables - Temperature
-
-int16_t watertbl = 0;
-float watertbl_cal;
-
+void setup(){
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 // SETUP
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void setup() {
-
+  // ------ VARIABLE DEFINTION DURING RUNTIME ------ //
+  
   SP.begin(9600);                              // OPEN Serial PORT -- used for development purposes
   while (!SP && millis() < 5000);              // Wait 5 secs for Serial connection otherwise continue anyway...
   Wire.begin();
   
-  if (SET_IMU == 0) IMU_DPORT = -1;            // SET PINS TO -1 IF DEACTIVATED; ADC comes later
-  //if (SET_ADC = 0) {
-  if (SET_SMN == 0) StpCtr1_DPORT = -1;
+  if (SET_IMU == false) IMU_DPORT = -1;            // SET PINS TO -1 IF DEACTIVATED; ADC comes later
+  //if (SET_ADC = false) {
+  if (SET_SMN == false) StpCtr1_DPORT = -1;
 
   //TODO : ADC SETTINGS  ???
 
@@ -141,7 +92,8 @@ void setup() {
   //ads1220.vref1 = 3.3;
   
 
-  // ----- SETUP DIGITAL PINS ------ // - Set measurement pins to output, set unused pins to input_pullup
+  // ----- SETUP DIGITAL PINS ------ // : Set measurement pins to output, set unused pins to input_pullup
+  
   SP.println("Digital ports setup:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
@@ -150,8 +102,7 @@ void setup() {
       SP.println(": Output");
     }
     else {
-      // SET LED port to output low, all other unused ports to INPUT_PULLUP to save energy
-      if (i == LED_BUILTIN) {
+      if (i == LED_BUILTIN) {                     // SET LED port to output low, all other unused ports to INPUT_PULLUP to save energy
         pinMode(i, INPUT);
         SP.println(": Input (LED Off)");
       }
@@ -163,18 +114,19 @@ void setup() {
   }
 
   // ------ RELAIS SETTINGS ------ //
-  pinMode(A2, OUTPUT);                        // Relais K1
+  
+  pinMode(A2, OUTPUT);                            // Relais K1
   pinMode(A3, OUTPUT);
   K1_AllOff ();
   
-  pinMode(A4, OUTPUT);                        // Relais K2
+  pinMode(A4, OUTPUT);                           // Relais K2
   pinMode(A5, OUTPUT);
   K2_AllOff ();
 
-  analogReadResolution(12);                    // SETUP ANALOG INPUT
+  analogReadResolution(12);                      // SETUP ANALOG INPUT
 
   // ACTIVATE SENSORS
-  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);               // Activate S Sensors
+  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);               // Activate Battery Sensor
   if (LED_DPORT >= 0) digitalWrite(LED_DPORT, HIGH);                 // Activate SMN Sensors
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);           // Activate SMN Sensors
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);           // Activate SMN Sensors
@@ -184,7 +136,7 @@ void setup() {
 
   delay(sensorstarttime);                                            // wait for sensors to startup
 
-  if (SET_SCL == 1) {
+  if (SET_SCL == true) {
   // TODO: Setup PINS MURATASC3300
   // pinMode(SCL3300_Power_PIN, OUTPUT);
   //pinMode(SCL3300_CS_PIN, OUTPUT);
@@ -236,9 +188,19 @@ void setup() {
 
 void loop()
 {
+
   // ------ PAYLOAD DECLARATIONS ------ //
-  short payload1size = 35;
+
+
+  short payload1size = 6;
+  
+  if(SET_IMU == true){payload1size += 18;}      // If loops to estimate payload size
+  if(SET_ADC == true){payload1size += 12;}
+  if(SET_SMN == true){payload1size += 8;} 
+
   byte payload1[payload1size];
+  
+  //TODO: Same type of if loop for extra payload // 
   short extrapayload1size = 35;
   byte extrapayload1[extrapayload1size];
   
@@ -260,14 +222,14 @@ void loop()
   if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
 
   // ------ INITIALIZE ADS1220 ------ //
-  if (SET_ADC == 1){
+  if (SET_ADC == true){
   SP.println("ADS1220 Initialization...");
   if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
   else {SP.println("ADS1220 was NOT initialized successfully!");}
   SP.println();
 
   // ------ CALIBRATE ADS1220 ------ //
-  if (ADC_CAL == 1){
+  if (ADC_CAL == true){
   SP.println("ADS1220 Calibration (this may take a few seconds)...");
   ads1220.calibrate();
   SP.println();
@@ -295,7 +257,8 @@ void loop()
 
   
   // ------ INITIALIZE SENSORS AFTER POWERUP ------ //
-  if (IMU_DPORT >= 0) {                                  // IMU INITIALIZE
+  
+  if (IMU_DPORT == HIGH ) {                                  // IMU INITIALIZE
     if(!myIMU.init()){
       Serial.println("ICM20948 does not respond");
     }
@@ -318,18 +281,18 @@ void loop()
   }
 
 
-  bmp388.begin();                                        //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE 
-  bmp388.setTimeStandby(TIME_STANDBY_1280MS);                                 // Set the standby time to 1.3 seconds
-  bmp388.startNormalConversion();                                             // Start BMP388 continuous conversion in NORMAL_MODE  
+  bmp388.begin();                                            //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE 
+  bmp388.setTimeStandby(TIME_STANDBY_1280MS);                                     // Set the standby time to 1.3 seconds
+  bmp388.startNormalConversion();                                                 // Start BMP388 continuous conversion in NORMAL_MODE  
   
 
-  if (SET_SMN == 1){                                      // SMN INITIALIZE
+  if (SET_SMN == true){                                      // SMN INITIALIZE
     bma456.initialize();
   }
 
 
-  if (SET_SCL == 1) {
-    inclinometer.WakeMeUp();                              // Turn on Murata
+  if (SET_SCL == true) {
+    inclinometer.WakeMeUp();                                 // Turn on Murata
     //digitalWrite(SCL3300_Power_PIN, HIGH);
     delay(10);
 
@@ -417,7 +380,7 @@ void loop()
        meassum[11] = meassum[11] + round(pressure / 100);            // Pa div. 100 equ. hPa = mBar
     }
 
-    if (SET_SCL == 1 && meastime >= INKL_MINT * INKL_MCTR){            // SCL Inclinometer Measurement
+    if (SET_SCL == true && meastime >= INKL_MINT * INKL_MCTR){            // SCL Inclinometer Measurement
       INKL_MCTR++;
       if (inclinometer.begin(scl3300_sspin) == false) {
         SP.println("Murata SCL3300 inclinometer not connected.");
@@ -426,7 +389,7 @@ void loop()
       inclinometer.setMode(scl3300_mode);
       delay(1);
       if (inclinometer.available()) {
-        float incl_raw_x = (inclinometer.getTiltLevelOffsetAngleX());
+        float incl_raw_x = (inclinometer.getTiltLevelOffsetAngleX());     // Inline these functions to save memory.
         float incl_raw_y = (inclinometer.getTiltLevelOffsetAngleY());
         float incl_raw_z = (inclinometer.getTiltLevelOffsetAngleZ());
         meassum[13] = meassum[13] + round(incl_raw_x*1000);
@@ -437,7 +400,7 @@ void loop()
       delay(10);
     }
 
-    if (SET_SMN == 1 && meastime >= SMN_MINT * SMN_MCTR){               // SMN MEASUREMENT (for only one SMN)
+    if (SET_SMN == true && meastime >= SMN_MINT * SMN_MCTR){               // SMN MEASUREMENT (for only one SMN)
       SMN_MCTR++;
       bma456.getAcceleration(&smn_x, &smn_y, &smn_z);
       smn_temp = bma456.getTemperature();
@@ -451,7 +414,7 @@ void loop()
     delay(50);                                                          // DELAY after every measurement cycle
   }
 
-  if (SET_SCL == 1){                                                    // Turn off Murata
+  if (SET_SCL == true){                                                 // Turn off Murata
     //digitalWrite(SCL3300_Power_PIN, LOW);
     digitalWrite(SCL3300_CS_PIN, HIGH);
     inclinometer.powerDownMode();
@@ -459,7 +422,7 @@ void loop()
 
   while(ADC_MCTR < 10){                                                 // ADC MEASUREMENT
     ADC_MCTR++;
-    if (SET_ADC == 1){
+    if (SET_ADC == true){
       if (ADS_C1 == 1){                                                 //CHannel 1 measurement (4-20 mA):
         SP.println("ADS1220 Initialization...");
         if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
@@ -502,10 +465,10 @@ void loop()
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, LOW);
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, LOW);
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, LOW);
-  if (SET_ADC == 1) ads1220.powerdown();
+  if (SET_ADC == true) ads1220.powerdown();
   if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, LOW);
     
-   if (SET_SMN == 1) {
+   if (SET_SMN == true) {
     if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, LOW); 
   }
 
@@ -600,7 +563,7 @@ void loop()
   SP.println(report);
   SP.println();
 
-  if (SET_SMN == 1)
+  if (SET_SMN == true)
   {
   sprintf(report2, "INCL: %6d; TEMP: %6d",
           smn1_x, smn1_temp);
