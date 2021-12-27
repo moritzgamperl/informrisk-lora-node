@@ -16,57 +16,7 @@
     - BMP388
 */
 
-// -------------------------------------------------------------------------------------------------------------------------------------------------------
-// HEADER - INCLUDE LIBRARIES/FILES
-// -------------------------------------------------------------------------------------------------------------------------------------------------------
-
-#include <MKRWAN.h>                  //  Library: MKRWAN from Arduino - Library for Arduino MKR WAN boards
-LoRaModem modem;
-#include <ArduinoLowPower.h>         //  Library: Arduino Low Power - Library for Low Power mode (requires RTCZero library)
-
-
-// ------ ICM20948 Sensor ------ //
-#include "Wire.h"
-#include "I2Cdev.h"
-#include "ICM20948_WE.h"
-#define ICM20948_ADDR 0x68
-ICM20948_WE myIMU = ICM20948_WE(ICM20948_ADDR);
-I2Cdev I2C_M;
-
-
-// ------ BMP388 Sensor ------ //
-#include "BMP388_DEV.h"
-BMP388_DEV bmp388;         
-
-
-// ------ Step Counter ------ //
-#include "arduino_bma456.h";
-
-
-// ------ Olimex ADS1220 Sensor ------ //
-#include "agr_ads1220.h";
-agr_ads1220 ads1220;
-
-
-// ------ SCL3300 Sensor ------ //
-#include "SPI.h"
-#include "SCL3300.h"
-SCL3300 inclinometer;
-
-
-// ------ Define for SAMD processors ------ //
-#if defined (ARDUINO_ARCH_SAMD)
-//#define SP Serial1USB
-#endif
-                                                                        // TODO:Setup File - Read from Flash!/Write to Flash
-// ------ Custom Header Includes ------ //
-#include "arduino_secrets.h"
-#include "array.h"
-#include "Uni_Config.h"
-#include "IMU_Config.h"
-#include "SMN_Config.h"
-#include "ADC_Config.h"
-
+#include "Uni_Config.h"            // -- Includes necessary File Includes and Variable Declarations -- //
 
 void setup(){
 
@@ -115,25 +65,16 @@ void setup(){
 
   // ------ RELAIS SETTINGS ------ //
   
-  pinMode(A2, OUTPUT);                            // Relais K1
+  pinMode(A2, OUTPUT);                                               // Relais K1
   pinMode(A3, OUTPUT);
   K1_AllOff ();
   
-  pinMode(A4, OUTPUT);                           // Relais K2
+  pinMode(A4, OUTPUT);                                               // Relais K2
   pinMode(A5, OUTPUT);
   K2_AllOff ();
 
-  analogReadResolution(12);                      // SETUP ANALOG INPUT
-
-  // ACTIVATE SENSORS
-  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);               // Activate Battery Sensor
-  if (LED_DPORT >= 0) digitalWrite(LED_DPORT, HIGH);                 // Activate SMN Sensors
-  if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);           // Activate SMN Sensors
-  if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);           // Activate SMN Sensors
-  if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);               // Activate SMN Sensors
-  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                 // Activate SMN Sensors
-  if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);         // Activate SMN Sensors 
-
+  analogReadResolution(12);                                          // SETUP ANALOG INPUT
+  
   delay(sensorstarttime);                                            // wait for sensors to startup
 
   if (SET_SCL == true) {
@@ -194,8 +135,8 @@ void loop()
 
   short payload1size = 6;
   
-  if(SET_IMU == true){payload1size += 18;}      // If loops to estimate payload size
-  if(SET_ADC == true){payload1size += 12;}
+  if(SET_IMU == true){payload1size += 18;}      // If loops to estimate payload size - implemented only for the 3 sensors discussed
+  if(SET_ADC == true){payload1size += 12;}      
   if(SET_SMN == true){payload1size += 8;} 
 
   byte payload1[payload1size];
@@ -490,7 +431,7 @@ void loop()
   int16_t temp = round(meassum[10] / (BARO_MCTR - 1));
   int16_t prsr = round(meassum[11] / (BARO_MCTR - 1));
   int16_t adc = round(meassum[12] / (ADC_MCTR - 1));
-  int16_t inkl_x = round(meassum[13] / (INKL_MCTR - 1));
+  int16_t inkl_x = round(meassum[13] / (INKL_MCTR - 1));           // SCL Values x,y,z
   int16_t inkl_y = round(meassum[14] / (INKL_MCTR - 1));
   int16_t inkl_z = round(meassum[15] / (INKL_MCTR - 1));
   int16_t smn1_x = round(meassum[16] / (SMN_MCTR - 1));

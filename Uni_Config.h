@@ -1,4 +1,46 @@
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
+// HEADER - INCLUDE LIBRARIES/FILES
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#include <MKRWAN.h>                  //  Library: MKRWAN from Arduino - Library for Arduino MKR WAN boards
+LoRaModem modem;
+#include <ArduinoLowPower.h>         //  Library: Arduino Low Power - Library for Low Power mode (requires RTCZero library)
+
+
+// ------ ICM20948 Sensor ------ //
+#include "Wire.h"
+#include "I2Cdev.h"
+#include "ICM20948_WE.h"
+#define ICM20948_ADDR 0x68
+ICM20948_WE myIMU = ICM20948_WE(ICM20948_ADDR);
+I2Cdev I2C_M;
+
+
+// ------ BMP388 Sensor ------ //
+#include "BMP388_DEV.h"
+BMP388_DEV bmp388;         
+
+
+// ------ Step Counter ------ //
+#include "arduino_bma456.h";
+
+
+// ------ Olimex ADS1220 Sensor ------ //
+#include "agr_ads1220.h";
+agr_ads1220 ads1220;
+
+
+// ------ Define for SAMD processors ------ //
+#if defined (ARDUINO_ARCH_SAMD)
+//#define SP Serial1USB
+#endif
+                                                                        // TODO:Setup File - Read from Flash!/Write to Flash
+// ------ Custom Header Includes ------ //
+#include "arduino_secrets.h"
+#include "array.h"
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
 // UNIVERSAL CONFIGURATIONS
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -94,10 +136,7 @@ int SMN_MINT = 10;
 #define ADS1220_CS_PIN    5
 #define ADS1220_DRDY_PIN  4
 
-//#define SCL3300_Power_PIN 4
-#define SCL3300_CS_PIN -1
-int scl3300_sspin = SCL3300_CS_PIN;
-int scl3300_mode = 4;
+// -- Not sure if they are SCL configs --//
 int INKL_MINT = 100;
 int INKL_MCTR = 1;
 
@@ -106,6 +145,34 @@ int MAG_MCTR = 1;         // MAG measurement counter -- do not change
 int BARO_MCTR = 1;        // BARO measurement counter -- do not change
 
 
+//-- IMU CONFIGURATION SETTING, KEPT HERE TEMPORARILY -- //
+
+long meassum[22];                            // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
+long arr_imu_a_x[100];                       // Array with measurements for imu.a.x Qestion: How to deal with max size of Array? Here, 1000 as default
+long arr_imu_a_y[100];
+long arr_imu_a_z[100];
+long arr_imu_g_x[100];
+long arr_imu_g_y[100];
+long arr_imu_g_z[100];
+long arr_mag_m_x[100];
+long arr_mag_m_y[100];
+long arr_mag_m_z[100];
+
+float temperature, pressure, altitude;       // Create the temperature, pressure and altitude variables
+                                                                                                    
+int16_t ax, ay, az;                          // For acceleration values from 
+int16_t gx, gy, gz;                          // For  values from 
+int16_t mx, my, mz;                          // For  values from 
+
+// Measurement interval and counter are same as for Pololu
+int IMU_MINT = 100;       // measurement interval of the IMU (Accelerometer & Gyro) (ms) -- make sure is supported by device; e.g. 100 = 10 Hz
+int MAG_MINT = 100;      // measurement interval of the Magnetometer (ms) -- make sure is supported by device; e.g. 1000 = 1 Hz 
+int BARO_MINT = 100;     // measurement interval of the Barometer (ms) -- make sure is supported by device; e.g. 1000 = 1 Hz
+
+
 //---------------------------------------------------------------------------------------------------------------------------
 //INCLUDE EXTRA CONFIGURATION FILE DEPENDING THE SENSORS ATTACHED
 //---------------------------------------------------------------------------------------------------------------------------
+#include "SCL_Config.h"
+#include "SMN_Config.h"
+#include "ADC_Config.h"
