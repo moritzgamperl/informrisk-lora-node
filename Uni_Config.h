@@ -37,7 +37,7 @@ agr_ads1220 ads1220;
                                                                         // TODO:Setup File - Read from Flash!/Write to Flash
 // ------ Custom Header Includes ------ //
 #include "arduino_secrets.h"
-#include "array.h"
+#include "extra_functions.h"
 
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ bool SET_IMU = false;                                                  // Sensor
 bool SET_ADC = false;                                                  // 
 bool SET_SCL = false;                                                  // High Accuracy inclination sensor (in most nodes that dont have the IMU)
 bool SET_SMN = false;                                                  // Turn additional functions on/off (eg Bodensonde: SET_SMN: "Subsurface Measurement Node")
-
+bool SET_BARO = true;                                        
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 // HARDWARE CINFIGURATIONS                                             // Set DPORT to -1 (or any other negative value) to turn off device
@@ -147,7 +147,7 @@ int BARO_MCTR = 1;        // BARO measurement counter -- do not change
 
 //-- IMU CONFIGURATION SETTING, KEPT HERE TEMPORARILY -- //
 
-long meassum[22];                            // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
+long meassum[8];                            // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
 long arr_imu_a_x[100];                       // Array with measurements for imu.a.x Qestion: How to deal with max size of Array? Here, 1000 as default
 long arr_imu_a_y[100];
 long arr_imu_a_z[100];

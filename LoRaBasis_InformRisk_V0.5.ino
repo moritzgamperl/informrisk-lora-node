@@ -30,7 +30,7 @@ void setup(){
   while (!SP && millis() < 5000);              // Wait 5 secs for Serial connection otherwise continue anyway...
   Wire.begin();
   
-  if (SET_IMU == false) IMU_DPORT = -1;            // SET PINS TO -1 IF DEACTIVATED; ADC comes later
+  //if (SET_IMU == false) IMU_DPORT = -1;            // SET PINS TO -1 IF DEACTIVATED; ADC comes later
   //if (SET_ADC = false) {
   if (SET_SMN == false) StpCtr1_DPORT = -1;
 
@@ -47,7 +47,7 @@ void setup(){
   SP.println("Digital ports setup:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
-    if (i == BATT_DPORT || i == SW33_A_DPORT || i == SW33_B_DPORT || i == SW12_DPORT || i == LED_DPORT || i == IMU_DPORT || i == StpCtr1_DPORT) {
+    if (i == BATT_DPORT || i == SW33_A_DPORT || i == SW33_B_DPORT || i == SW12_DPORT || i == LED_DPORT || i == IMU_DPORT || i == StpCtr1_DPORT) {        // IMU_DPORT HERE
       pinMode(i, OUTPUT);
       SP.println(": Output");
     }
@@ -135,15 +135,11 @@ void loop()
 
   short payload1size = 6;
   
-  if(SET_IMU == true){payload1size += 18;}      // If loops to estimate payload size - implemented only for the 3 sensors discussed
+  if(SET_SCL == true){payload1size += 8;}               // If loops to estimate payload size - implemented only for the 3 sensors discussed
   if(SET_ADC == true){payload1size += 12;}      
   if(SET_SMN == true){payload1size += 8;} 
 
   byte payload1[payload1size];
-  
-  //TODO: Same type of if loop for extra payload // 
-  short extrapayload1size = 35;
-  byte extrapayload1[extrapayload1size];
   
   loopctr++;                                   // Loop Counter
   
@@ -159,7 +155,7 @@ void loop()
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);
-  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);
+  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                      // IMU_DPORT HERE
   if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
 
   // ------ INITIALIZE ADS1220 ------ //
@@ -198,8 +194,8 @@ void loop()
 
   
   // ------ INITIALIZE SENSORS AFTER POWERUP ------ //
-  
-  if (IMU_DPORT == HIGH ) {                                  // IMU INITIALIZE
+
+  if (SET_IMU == HIGH ) {                                  // IMU INITIALIZE
     if(!myIMU.init()){
       Serial.println("ICM20948 does not respond");
     }
@@ -221,11 +217,12 @@ void loop()
     myIMU.setMagOpMode(AK09916_CONT_MODE_20HZ);
   }
 
-
-  bmp388.begin();                                            //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE 
-  bmp388.setTimeStandby(TIME_STANDBY_1280MS);                                     // Set the standby time to 1.3 seconds
-  bmp388.startNormalConversion();                                                 // Start BMP388 continuous conversion in NORMAL_MODE  
-  
+  // Barometer Initialization
+  if (SET_BARO == true){
+    bmp388.begin();                                            //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE 
+    bmp388.setTimeStandby(TIME_STANDBY_1280MS);                                     // Set the standby time to 1.3 seconds
+    bmp388.startNormalConversion();                                                 // Start BMP388 continuous conversion in NORMAL_MODE  
+  }
 
   if (SET_SMN == true){                                      // SMN INITIALIZE
     bma456.initialize();
@@ -256,7 +253,7 @@ void loop()
   ADC_MCTR = 1;
   SP.println("BREAK: Measurement started, counters set to 1");
 
-  for (int i = 0; i <= 21; i++){
+  for (int i = 0; i <= 8; i++){
     meassum[i] = 0;                                                    //Reset Measurent Variables
   }
 
@@ -271,56 +268,23 @@ void loop()
       SP.print("BREAK: Battery voltage finished:");
       SP.println(batt);
     }
-
-    if (IMU_DPORT >= 0 && meastime >= IMU_MINT * IMU_MCTR) {           // IMU MEASUREMENT
-      IMU_MCTR++;
-      SP.println("Measuring IMU....");
-      
-      myIMU.readSensor();                                              // Get IMU Sensor Data
-      xyzFloat gValue = myIMU.getGValues();
-      xyzFloat gyr = myIMU.getGyrValues();
-      xyzFloat magValue = myIMU.getMagValues();
-      float imu_temp = myIMU.getTemperature();
-      float resultantG = myIMU.getResultantG(gValue);
-    
-      SP.print(gValue.x);
-      
-      meassum[1] = meassum[1] + gValue.x;                              // Adding Measured Values to the Measurement Array Variable
-      meassum[2] = meassum[2] + gValue.y; 
-      meassum[3] = meassum[3] + gValue.z;
-      meassum[4] = meassum[4] + gyr.x;
-      meassum[5] = meassum[5] + gyr.y;
-      meassum[6] = meassum[6] + gyr.z;
-      meassum[7] = meassum[7] + magValue.x;
-      meassum[8] = meassum[8] + magValue.y;
-      meassum[9] = meassum[9] + magValue.z;
-      
-      arr_imu_a_x[IMU_MCTR - 1] = gValue.x;                            // To calculate the Median??
-      arr_imu_a_y[IMU_MCTR - 1] = gValue.y;
-      arr_imu_a_z[IMU_MCTR - 1] = gValue.z;
-      arr_imu_g_x[IMU_MCTR - 1] = gyr.x;
-      arr_imu_g_y[IMU_MCTR - 1] = gyr.y;
-      arr_imu_g_z[IMU_MCTR - 1] = gyr.z;
-      arr_mag_m_x[MAG_MCTR - 1] = magValue.x;
-      arr_mag_m_y[MAG_MCTR - 1] = magValue.y;
-      arr_mag_m_z[MAG_MCTR - 1] = magValue.z;
-    }  
-    
-    if (IMU_DPORT >= 0 && meastime >= BARO_MINT * BARO_MCTR) {                         // BARO MEASUREMENT
-      BARO_MCTR++;
-      if (bmp388.getMeasurements(temperature, pressure, altitude))   // Check if the measurement is complete
-      {
-        Serial.print(temperature);                                   // Display the results    
-        Serial.print(F("*C   "));
-        Serial.print(pressure);    
-        Serial.print(F("hPa   "));
-        Serial.print(altitude);
-        Serial.println(F("m"));  
-       }
-       meassum[10] = meassum[10] + round(temperature*10);
-       meassum[11] = meassum[11] + round(pressure / 100);            // Pa div. 100 equ. hPa = mBar
+    // check for bar boolean
+    if (IMU_DPORT >= 0){
+      if (SET_BARO == true && meastime >= BARO_MINT * BARO_MCTR) {                         // BARO MEASUREMENT
+        BARO_MCTR++;
+        if (bmp388.getMeasurements(temperature, pressure, altitude))   // Check if the measurement is complete
+        {
+          Serial.print(temperature);                                   // Display the results    
+          Serial.print(F("*C   "));
+          Serial.print(pressure);    
+          Serial.print(F("hPa   "));
+          Serial.print(altitude);
+          Serial.println(F("m"));  
+         }
+         meassum[1] = meassum[1] + round(temperature*10);
+         meassum[2] = meassum[2] + round(pressure / 100);            // Pa div. 100 equ. hPa = mBar
+      }
     }
-
     if (SET_SCL == true && meastime >= INKL_MINT * INKL_MCTR){            // SCL Inclinometer Measurement
       INKL_MCTR++;
       if (inclinometer.begin(scl3300_sspin) == false) {
@@ -330,12 +294,9 @@ void loop()
       inclinometer.setMode(scl3300_mode);
       delay(1);
       if (inclinometer.available()) {
-        float incl_raw_x = (inclinometer.getTiltLevelOffsetAngleX());     // Inline these functions to save memory.
-        float incl_raw_y = (inclinometer.getTiltLevelOffsetAngleY());
-        float incl_raw_z = (inclinometer.getTiltLevelOffsetAngleZ());
-        meassum[13] = meassum[13] + round(incl_raw_x*1000);
-        meassum[14] = meassum[14] + round(incl_raw_y*1000);
-        meassum[15] = meassum[15] + round(incl_raw_z*1000);
+        meassum[3] = meassum[3] + round((inclinometer.getTiltLevelOffsetAngleX())*1000);
+        meassum[4] = meassum[4] + round((inclinometer.getTiltLevelOffsetAngleY())*1000);
+        meassum[5] = meassum[5] + round((inclinometer.getTiltLevelOffsetAngleZ())*1000);
       } 
       else inclinometer.reset();
       delay(10);
@@ -346,10 +307,10 @@ void loop()
       bma456.getAcceleration(&smn_x, &smn_y, &smn_z);
       smn_temp = bma456.getTemperature();
 
-      meassum[16] = meassum[16] + smn_x;
-      meassum[17] = meassum[17] + smn_y;
-      meassum[18] = meassum[18] + smn_z;
-      meassum[19] = meassum[19] + smn_temp;
+      meassum[6] = meassum[6] + smn_x;
+      meassum[7] = meassum[7] + smn_y;
+      meassum[8] = meassum[8] + smn_z;
+      meassum[9] = meassum[9] + smn_temp;
       
     }
     delay(50);                                                          // DELAY after every measurement cycle
@@ -419,39 +380,21 @@ void loop()
 
 
   int16_t battv = round(meassum[0] / (BATT_MCTR - 1));                          //Calculate averages
-  int16_t imuax = round(meassum[1] / (IMU_MCTR - 1));
-  int16_t imuay = round(meassum[2] / (IMU_MCTR - 1));
-  int16_t imuaz = round(meassum[3] / (IMU_MCTR - 1));
-  int16_t imugx = round(meassum[4] / (IMU_MCTR - 1));
-  int16_t imugy = round(meassum[5] / (IMU_MCTR - 1));
-  int16_t imugz = round(meassum[6] / (IMU_MCTR - 1));
-  int16_t magmx = round(meassum[7] / (IMU_MCTR - 1));
-  int16_t magmy = round(meassum[8] / (IMU_MCTR - 1));
-  int16_t magmz = round(meassum[9] / (IMU_MCTR - 1));
-  int16_t temp = round(meassum[10] / (BARO_MCTR - 1));
-  int16_t prsr = round(meassum[11] / (BARO_MCTR - 1));
-  int16_t adc = round(meassum[12] / (ADC_MCTR - 1));
-  int16_t inkl_x = round(meassum[13] / (INKL_MCTR - 1));           // SCL Values x,y,z
-  int16_t inkl_y = round(meassum[14] / (INKL_MCTR - 1));
-  int16_t inkl_z = round(meassum[15] / (INKL_MCTR - 1));
-  int16_t smn1_x = round(meassum[16] / (SMN_MCTR - 1));
-  int16_t smn1_y = round(meassum[17] / (SMN_MCTR - 1));
-  int16_t smn1_z = round(meassum[18] / (SMN_MCTR - 1));
-  int16_t smn1_temp = round(meassum[19] / (SMN_MCTR - 1));
-
-  int16_t med_imu_a_x = int(Array_median(arr_imu_a_x, IMU_MCTR));                //Calculate medians
-  int16_t med_imu_a_y = int(Array_median(arr_imu_a_y, IMU_MCTR));
-  int16_t med_imu_a_z = int(Array_median(arr_imu_a_z, IMU_MCTR));
-  int16_t med_imu_g_x = int(Array_median(arr_imu_g_x, IMU_MCTR));
-  int16_t med_imu_g_y = int(Array_median(arr_imu_g_y, IMU_MCTR));
-  int16_t med_imu_g_z = int(Array_median(arr_imu_g_z, IMU_MCTR));
-  int16_t med_imu_m_x = int(Array_median(arr_mag_m_x, IMU_MCTR));
-  int16_t med_imu_m_y = int(Array_median(arr_mag_m_y, IMU_MCTR));
-  int16_t med_imu_m_z = int(Array_median(arr_mag_m_z, IMU_MCTR));
+  int16_t temp = round(meassum[1] / (BARO_MCTR - 1));
+  int16_t prsr = round(meassum[2] / (BARO_MCTR - 1));
+  //int16_t adc = round(meassum[12] / (ADC_MCTR - 1));                          // ADC measurement??????
+  int16_t inkl_x = round(meassum[3] / (INKL_MCTR - 1));                         // SCL Values x,y,z
+  int16_t inkl_y = round(meassum[4] / (INKL_MCTR - 1));
+  int16_t inkl_z = round(meassum[5] / (INKL_MCTR - 1));
+  int16_t smn1_x = round(meassum[6] / (SMN_MCTR - 1));
+  int16_t smn1_y = round(meassum[7] / (SMN_MCTR - 1));
+  int16_t smn1_z = round(meassum[8] / (SMN_MCTR - 1));
+  int16_t smn1_temp = round(meassum[9] / (SMN_MCTR - 1));
+  
 
   SP.println("BREAK: Medians, Averages calculated");
                                                                                  
-  int8_t battery = 10 * battv * 3.3 / 4095 * (BATT_R1 + BATT_R2) / (BATT_R1);    // Calculate battvolt - 10 times the battery voltage in volts
+  int8_t battery = 10 * (round(meassum[0] / (BATT_MCTR - 1))) * 3.3 / 4095 * (BATT_R1 + BATT_R2) / (BATT_R1);    // Calculate battvolt - 10 times the battery voltage in volts
                                                                                  
   payload1[0] = payload1size;                                                    // Create byte array to send (see https://www.thethingsnetwork.org/docs/devices/bytes.html for byte encoding examples)
   payload1[1] = highByte(desig);
@@ -459,51 +402,60 @@ void loop()
   payload1[3] = highByte(settings_desig);
   payload1[4] = lowByte(settings_desig);
   payload1[5] = battery;
-  payload1[6] = temp >> 16;
-  payload1[7] = temp >> 8;
-  payload1[8] = temp;
-  payload1[6] = prsr >> 16;
-  payload1[7] = prsr >> 8;
-  payload1[8] = prsr;
-  payload1[3] = highByte(imuax);
-  payload1[4] = lowByte(imuax);
-  payload1[5] = highByte(imuay);
-  payload1[6] = lowByte(imuay);
-  payload1[7] = highByte(imuaz);
-  payload1[8] = lowByte(imuaz);
-  payload1[9] = highByte(imugx);
-  payload1[10] = lowByte(imugx);
-  payload1[11] = highByte(imugy);
-  payload1[12] = lowByte(imugy);
-  payload1[13] = highByte(imugz);
-  payload1[14] = lowByte(imugz);
-  
-  extrapayload1[3] = highByte(imuay);                                               //EXTRA PAYLOAD1
-  extrapayload1[4] = lowByte(imuay);
-  extrapayload1[7] = highByte(imugx);
-  extrapayload1[8] = lowByte(imugx);
-  extrapayload1[9] = highByte(imugy);
-  extrapayload1[10] = lowByte(imugy);
-  extrapayload1[11] = highByte(imugz);
-  extrapayload1[12] = lowByte(imugz);
-  extrapayload1[13] = highByte(magmx);
-  extrapayload1[14] = lowByte(magmx);
-  extrapayload1[15] = highByte(magmy);
-  extrapayload1[16] = lowByte(magmy);
-  extrapayload1[17] = highByte(magmz);
-  extrapayload1[18] = lowByte(magmz);
-  
-  sprintf(report, "Batt: %6d; IMU: A: %6d %6d %6d; G: %6d %6d %6d; M: %6d %6d %6d; INCL: %6d %6d %6d; T: %6d; P: %6d",            // Display data on SP port
-          battery,
-          imuax, imuay, imuaz,
-          imugx, imugy, imugz,
-          magmx, magmy, magmz,
-          inkl_x, inkl_y, inkl_z,
-          temp, prsr);
 
+  int i = 5;
+  
+  if(SET_ADC == true)
+    {
+    // Which measurment for ADC VALUES???
+    // twelve more measurements
+    i = i+12;
+    } 
+
+  if (SET_BARO == true) 
+    {
+    payload1[i+1] = ((int16_t)(round(meassum[1] / (BARO_MCTR - 1)))) >> 16;
+    payload1[i+2] = ((int16_t)(round(meassum[1] / (BARO_MCTR - 1)))) >> 8;
+    payload1[i+3] = ((int16_t)(round(meassum[1] / (BARO_MCTR - 1))));
+    payload1[i+4] = ((int16_t)(round(meassum[2] / (BARO_MCTR - 1)))) >> 16;
+    payload1[i+5] = ((int16_t)(round(meassum[2] / (BARO_MCTR - 1)))) >> 8;
+    payload1[i+6] = ((int16_t)(round(meassum[2] / (BARO_MCTR - 1))));  
+    i = i+6;
+    }
+
+  if(SET_SCL == true)
+    {
+    payload1[i+1] = highByte((int16_t)(round(meassum[3] / (INKL_MCTR - 1))));              // inkl_x
+    payload1[i+2] = lowByte((int16_t)(round(meassum[3] / (INKL_MCTR - 1))));
+    payload1[i+3] = highByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));              // inkl_y
+    payload1[i+4] = lowByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));
+    payload1[i+5] = highByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));              // inkl_z
+    payload1[i+6] = lowByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));
+    i = i+6;
+    }    
+       
+  if(SET_SMN == true)
+    {
+    payload1[i+1] = highByte((int16_t)(round(meassum[5] / (SMN_MCTR - 1))));             //smn1_x
+    payload1[i+2] = lowByte((int16_t)(round(meassum[5] / (SMN_MCTR - 1))));
+    payload1[i+3] = highByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));             //smn1_y
+    payload1[i+4] = lowByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));
+    payload1[i+5] = highByte((int16_t)(round(meassum[7] / (SMN_MCTR - 1))));             //smn1_z
+    payload1[i+6] = lowByte((int16_t)(round(meassum[7] / (SMN_MCTR - 1))));
+    payload1[i+7] = highByte((int16_t)(round(meassum[8] / (SMN_MCTR - 1))));             //smn1_temp
+    payload1[i+8] = lowByte((int16_t)(round(meassum[8] / (SMN_MCTR - 1))));
+    i = i+8;
+    }
+
+  // Print report before storing it into the payloads
+  if (SET_SMN == true)
+  {
+  //sprintf(report, "Batt: %6d; INCL: %6d %6d %6d; T: %6d; P: %6d",            // Display data on SP port
+  //        inkl_x, inkl_y, inkl_z,
+  //        temp, prsr);
   SP.println(report);
   SP.println();
-
+  }
   if (SET_SMN == true)
   {
   sprintf(report2, "INCL: %6d; TEMP: %6d",
@@ -511,9 +463,6 @@ void loop()
   SP.println(report2);
   SP.println();
   }
-
-  //SP.write(payload,payloadsize);                       // Display raw data on SP port
-  //SP.println();
 
 
   // ------ SEND DATA VIA LoRa ------ //                 //Reset commands every loop
@@ -525,17 +474,12 @@ void loop()
   //modem.dataRate(5);                                   // Set dataRate manually: Usually deactivated to allow for automatic data rate adaptation depending on signal to Noise Ratio, 5: switch to SF7
   delay(100);                                            // For more Stable Connection
   modem.beginPacket();                                   // modem.beginPacket startet das Packet das mit LoRa versendet wird
-         
-  if (loopctr < extrafreq){                               // Determining payload to be sent to modem          
-    if (desig == 1) {
-      SP.println("LoRa Infrastructure Node");
-      modem.write(payload1, payload1size);
-    }
-    /*if (desig == 2){
-      SP.println("Subsurface Measurement Node");
-      modem.write(payload2, payload2size);
-    } */
+                                         
+  if (desig == 1) {
+    SP.println("LoRa Infrastructure Node");
   }
+  
+  modem.write(payload1, payload1size);
   err = modem.endPacket(true);                            //When modem.endPacket(true), then confirmed data sent!
   if (err > 0){
     SP.println("Message sent correctly!");
@@ -672,34 +616,4 @@ void loop()
     }
   }
 
-}
-
-void K1_AllOff () {             // turn on pullup resistors
-  digitalWrite(A2, LOW);        
-  digitalWrite(A3, LOW);
-}
-
-void K1_TurnA () {              // turn on pullup resistors
-  digitalWrite(A2, HIGH);       
-  digitalWrite(A3, LOW);      
-}
-
-void K1_TurnB () {              // turn on pullup resistors
-  digitalWrite(A2, LOW);        
-  digitalWrite(A3, HIGH);      
-}
-
-void K2_AllOff () {             // turn on pullup resistors
-  digitalWrite(A4, LOW);
-  digitalWrite(A5, LOW);
-}
-
-void K2_TurnA () {              // turn on pullup resistors
-  digitalWrite(A4, HIGH);       
-  digitalWrite(A5, LOW);       
-}
-
-void K2_TurnB () {              // turn on pullup resistors
-  digitalWrite(A4, LOW);       
-  digitalWrite(A5, HIGH);       
 }

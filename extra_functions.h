@@ -38,3 +38,33 @@ int Array_median(long *array , int n)
     //Serial.print("The median is ");
     //Serial.println(median);
 }
+
+void K1_AllOff () {             // turn on pullup resistors
+  digitalWrite(A2, LOW);        
+  digitalWrite(A3, LOW);
+}
+
+void K1_TurnA () {              // turn on pullup resistors
+  digitalWrite(A2, HIGH);       
+  digitalWrite(A3, LOW);      
+}
+
+void K1_TurnB () {              // turn on pullup resistors
+  digitalWrite(A2, LOW);        
+  digitalWrite(A3, HIGH);      
+}
+
+void K2_AllOff () {             // turn on pullup resistors
+  digitalWrite(A4, LOW);
+  digitalWrite(A5, LOW);
+}
+
+void K2_TurnA () {              // turn on pullup resistors
+  digitalWrite(A4, HIGH);       
+  digitalWrite(A5, LOW);       
+}
+
+void K2_TurnB () {              // turn on pullup resistors
+  digitalWrite(A4, LOW);       
+  digitalWrite(A5, HIGH);       
+}
