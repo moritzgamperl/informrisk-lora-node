@@ -49,7 +49,8 @@ void setup(){
     SP.print(i);
     if (i == BATT_DPORT || i == SW33_A_DPORT || i == SW33_B_DPORT || i == SW12_DPORT || i == LED_DPORT || i == IMU_DPORT || i == StpCtr1_DPORT) {        // IMU_DPORT HERE
       pinMode(i, OUTPUT);
-      SP.println(": Output");
+      SP.print(": Output");
+      SP.print("\t");
     }
     else {
       if (i == LED_BUILTIN) {                     // SET LED port to output low, all other unused ports to INPUT_PULLUP to save energy
@@ -429,38 +430,52 @@ void loop()
     payload1[i+2] = lowByte((int16_t)(round(meassum[3] / (INKL_MCTR - 1))));
     payload1[i+3] = highByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));              // inkl_y
     payload1[i+4] = lowByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));
-    payload1[i+5] = highByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));              // inkl_z
-    payload1[i+6] = lowByte((int16_t)(round(meassum[4] / (INKL_MCTR - 1))));
+    payload1[i+5] = highByte((int16_t)(round(meassum[5] / (INKL_MCTR - 1))));              // inkl_z
+    payload1[i+6] = lowByte((int16_t)(round(meassum[5] / (INKL_MCTR - 1))));
     i = i+6;
     }    
        
   if(SET_SMN == true)
     {
-    payload1[i+1] = highByte((int16_t)(round(meassum[5] / (SMN_MCTR - 1))));             //smn1_x
-    payload1[i+2] = lowByte((int16_t)(round(meassum[5] / (SMN_MCTR - 1))));
-    payload1[i+3] = highByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));             //smn1_y
-    payload1[i+4] = lowByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));
-    payload1[i+5] = highByte((int16_t)(round(meassum[7] / (SMN_MCTR - 1))));             //smn1_z
-    payload1[i+6] = lowByte((int16_t)(round(meassum[7] / (SMN_MCTR - 1))));
-    payload1[i+7] = highByte((int16_t)(round(meassum[8] / (SMN_MCTR - 1))));             //smn1_temp
-    payload1[i+8] = lowByte((int16_t)(round(meassum[8] / (SMN_MCTR - 1))));
+    payload1[i+1] = highByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));             //smn1_x
+    payload1[i+2] = lowByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));
+    payload1[i+3] = highByte((int16_t)(round(meassum[7] / (SMN_MCTR - 1))));             //smn1_y
+    payload1[i+4] = lowByte((int16_t)(round(meassum[7] / (SMN_MCTR - 1))));
+    payload1[i+5] = highByte((int16_t)(round(meassum[8] / (SMN_MCTR - 1))));             //smn1_z
+    payload1[i+6] = lowByte((int16_t)(round(meassum[8] / (SMN_MCTR - 1))));
+    payload1[i+7] = highByte((int16_t)(round(meassum[9] / (SMN_MCTR - 1))));             //smn1_temp
+    payload1[i+8] = lowByte((int16_t)(round(meassum[9] / (SMN_MCTR - 1))));
     i = i+8;
     }
 
-  // Print report before storing it into the payloads
-  if (SET_SMN == true)
+
+  sprintf(report, "Batt: %6d Desig: %3d Set_Desig: %3d ",
+          battery, desig, settings_desig);
+  SP.println(report);
+  SP.println();
+
+  if (SET_BARO == true)
   {
-  //sprintf(report, "Batt: %6d; INCL: %6d %6d %6d; T: %6d; P: %6d",            // Display data on SP port
-  //        inkl_x, inkl_y, inkl_z,
-  //        temp, prsr);
+  sprintf(report, "INCL: %6d %6d %6d; T: %6d; P: %6d",            // Display data on SP port
+          inkl_x, inkl_y, inkl_z,
+          temp, prsr);
   SP.println(report);
   SP.println();
   }
+  
+  if (SET_SCL == true)
+  {
+  sprintf(report, "T: %6d; P: %6d",            // Display data on SP port
+          inkl_x, inkl_y, inkl_z);
+  SP.println(report);
+  SP.println();
+  }
+  
   if (SET_SMN == true)
   {
-  sprintf(report2, "INCL: %6d; TEMP: %6d",
-          smn1_x, smn1_temp);
-  SP.println(report2);
+  sprintf(report, "INCL: %6d %6d %6d; TEMP: %6d",
+          smn_x, smn_y, smn_z, smn1_temp);
+  SP.println(report);
   SP.println();
   }
 

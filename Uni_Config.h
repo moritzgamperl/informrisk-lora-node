@@ -63,8 +63,7 @@ unsigned long sleeptime = 0;                 // time arduino will sleep until ne
 unsigned long loopctr = 0;                   // counting the number of loops for extra payload
 
 
-char report[170];                            // Measurement report for Serial output
-char report2[170];                           // SMN Measurement report for Serial output
+char report[150];                             // Measurement report for Serial output
 
 int16_t watertbl = 0;
 float watertbl_cal;

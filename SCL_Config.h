@@ -7,6 +7,6 @@
 SCL3300 inclinometer;
 
 //#define SCL3300_Power_PIN 4
-#define SCL3300_CS_PIN -1
+#define SCL3300_CS_PIN 7
 int scl3300_sspin = SCL3300_CS_PIN;
 int scl3300_mode = 4;
