@@ -18,7 +18,7 @@ I2Cdev I2C_M;
 
 // ------ BMP388 Sensor ------ //
 #include "BMP388_DEV.h"
-BMP388_DEV bmp388;         
+BMP388_DEV bmp388;
 
 
 // ------ Step Counter ------ //
@@ -46,7 +46,7 @@ agr_ads1220 ads1220;
 
 // ------ VARIABLE DEFINTIONS ------ //
 
-uint8_t buffer_m[6];                         // For 
+uint8_t buffer_m[6];                         // For
 float lpot;
 float lpotvoltage;
 
@@ -71,12 +71,12 @@ float watertbl_cal;
 int StpCtr1_DPORT = -1;
 
 
-  
+
 // ------ DEFINE TIMING ------//
 
-#define SP Serial                                                      // Define Serial port to output Serial messages to                                          
+#define SP Serial                                                      // Define Serial port to output Serial messages to
                                                                        // LoRa Main Loop Timing; main loop is cycled every 100 ms --> loopintv should be dividable by 100 ms
-int loopintv = 300000;                                                 // loop interval (ms)
+int loopintv = 100000;                                                 // loop interval (ms)
 int sensorstarttime = 500;                                             // time to wait after sensors are powered up
 int extrafreq = 100000;                                                // Frequency of extra payload being sent instead of base payload: 10 means that this is sent every 10th time.
                                                                        //Measurement Timing; measurement loop is cycled every 10 ms --> all time intervals should be dividable by 10 ms
@@ -87,10 +87,10 @@ int measlength = 5000;                                                 // measur
 int desig = 1;                                                         // DESIGNATOR defining Payload type and Sensor type -> 1: LoRa Infrastructure Node (LIN), 2: Subsurface Node (SMN or LCI)
 int settings_desig = 00001;
 bool SET_IMU = false;                                                  // Sensor settings: false to deactivate Sensor in File, true to activate;
-bool SET_ADC = false;                                                  // 
-bool SET_SCL = false;                                                  // High Accuracy inclination sensor (in most nodes that dont have the IMU)
+bool SET_ADC = false;                                                  //
+bool SET_SCL = true;                                                  // High Accuracy inclination sensor (in most nodes that dont have the IMU)
 bool SET_SMN = false;                                                  // Turn additional functions on/off (eg Bodensonde: SET_SMN: "Subsurface Measurement Node")
-bool SET_BARO = true;                                        
+bool SET_BARO = true;
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 // HARDWARE CINFIGURATIONS                                             // Set DPORT to -1 (or any other negative value) to turn off device
@@ -100,26 +100,30 @@ int LED_DPORT = -1;                                                   // Digital
                                                                       //  set to "-1" to deactivate; LED will light up during measurement
 // ------ PCB State ------ //
                                                                       // Battery voltage measurement using voltage divider (BATT in; up to XXX Volts; defined by voltage divider resistor values)
-int BATT_DPORT = 0;                                                   // Digital port to turn on/off voltage divider; set to -1 to deactivate 
+int BATT_DPORT = 0;                                                   // Digital port to turn on/off voltage divider; set to -1 to deactivate
 int BATT_APORTin = A6;                                                // AnalogIn port used for batt voltage measurement
 int BATT_R1 = 33000;                                                  // Voltage divider resistor 1 in Ohms (used for voltage measurement)
 int BATT_R2 = 100000;                                                 // Voltage divider resistor 2 in Ohms
 int BATT_MINT = 500;                                                  // measurement interval of the BATT Voltage (ms)
 int BATT_MCTR =  1;                                                   // BATT measurement counter -- do not change
 int ADC_MINT = 100;                                                   // measurement interval of the ADC (ms) -- make sure is supported by device; e.g. 1000 = 1 Hz
-int ADC_MCTR = 1;         
+int ADC_MCTR = 1;
 int ADC_CAL = 0;
 
 // IMU Sensor
 int IMU_DPORT = 3;                                                    // Digital port to turn on/off Grove IMU 10DOF;  set to -1 to deactivate   // ICM20948
 int IMU_MCTR = 1;                                                     // IMU measurement counter -- do not change
 
+// BARO Sensor
+int BARO_MCTR = 1;        // BARO measurement counter -- do not change
+int BARO_DPORT = 3;
+
 // Switched 12V output
 int SW12_DPORT = 6;                                                   // Digital port to control 12V output; set to -1 to deactivate
 
 // Switched 3,3V output (turned on during measurements)
 int SW33_A_DPORT = 2;                                                 // Digital port to control 3,3V output A; set to -1 to deactivate
-int SW33_B_DPORT = -1;                                                // Digital port to control 3,3V output B; set to -1 to deactivate                    
+int SW33_B_DPORT = -1;                                                // Digital port to control 3,3V output B; set to -1 to deactivate
 
 
 // Buoyancy sensor                                                     //SMN sensor/ICL
@@ -127,7 +131,6 @@ int Wtr_DPORT = -1;                                                    // Digita
 int Wtr_APORT = A1;                                                    // Digital port of water measurements
 
 // SMN
-
 int SMN_MCTR = 1;
 int SMN_MINT = 10;
 
@@ -141,7 +144,6 @@ int INKL_MCTR = 1;
 
 // Not sure which sensor
 int MAG_MCTR = 1;         // MAG measurement counter -- do not change
-int BARO_MCTR = 1;        // BARO measurement counter -- do not change
 
 
 //-- IMU CONFIGURATION SETTING, KEPT HERE TEMPORARILY -- //
@@ -158,14 +160,14 @@ long arr_mag_m_y[100];
 long arr_mag_m_z[100];
 
 float temperature, pressure, altitude;       // Create the temperature, pressure and altitude variables
-                                                                                                    
-int16_t ax, ay, az;                          // For acceleration values from 
-int16_t gx, gy, gz;                          // For  values from 
-int16_t mx, my, mz;                          // For  values from 
+
+int16_t ax, ay, az;                          // For acceleration values from
+int16_t gx, gy, gz;                          // For  values from
+int16_t mx, my, mz;                          // For  values from
 
 // Measurement interval and counter are same as for Pololu
 int IMU_MINT = 100;       // measurement interval of the IMU (Accelerometer & Gyro) (ms) -- make sure is supported by device; e.g. 100 = 10 Hz
-int MAG_MINT = 100;      // measurement interval of the Magnetometer (ms) -- make sure is supported by device; e.g. 1000 = 1 Hz 
+int MAG_MINT = 100;      // measurement interval of the Magnetometer (ms) -- make sure is supported by device; e.g. 1000 = 1 Hz
 int BARO_MINT = 100;     // measurement interval of the Barometer (ms) -- make sure is supported by device; e.g. 1000 = 1 Hz
 
 

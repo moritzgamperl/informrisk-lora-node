@@ -3,8 +3,8 @@
     Authors: Moritz Gamperl & John Singer
 
     LoRaBasis_InformRisk
-    Version: 0.5
-    Date: 16.09.2021
+    Version: 0.6
+    Date: 22.02.2022
 
     Supported Hardware:
     BOARDS:
@@ -25,11 +25,11 @@ void setup(){
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
   // ------ VARIABLE DEFINTION DURING RUNTIME ------ //
-  
+
   SP.begin(9600);                              // OPEN Serial PORT -- used for development purposes
   while (!SP && millis() < 5000);              // Wait 5 secs for Serial connection otherwise continue anyway...
   Wire.begin();
-  
+
   //if (SET_IMU == false) IMU_DPORT = -1;            // SET PINS TO -1 IF DEACTIVATED; ADC comes later
   //if (SET_ADC = false) {
   if (SET_SMN == false) StpCtr1_DPORT = -1;
@@ -40,10 +40,10 @@ void setup(){
   ads1220.avdd = 3.3;                            //SET ADS1220 Reference voltages (if not set, 3,3 V is default value in all cases)
   //ads1220.vref0 = 3.3;
   //ads1220.vref1 = 3.3;
-  
+
 
   // ----- SETUP DIGITAL PINS ------ // : Set measurement pins to output, set unused pins to input_pullup
-  
+
   SP.println("Digital ports setup:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
@@ -65,17 +65,17 @@ void setup(){
   }
 
   // ------ RELAIS SETTINGS ------ //
-  
+
   pinMode(A2, OUTPUT);                                               // Relais K1
   pinMode(A3, OUTPUT);
   K1_AllOff ();
-  
+
   pinMode(A4, OUTPUT);                                               // Relais K2
   pinMode(A5, OUTPUT);
   K2_AllOff ();
 
   analogReadResolution(12);                                          // SETUP ANALOG INPUT
-  
+
   delay(sensorstarttime);                                            // wait for sensors to startup
 
   if (SET_SCL == true) {
@@ -84,14 +84,14 @@ void setup(){
   //pinMode(SCL3300_CS_PIN, OUTPUT);
   }
 
-     
+
   // ------ CONNECT TO LORA NETWORK ------ //
   if (!modem.begin(EU868))                               // Change this to your Regional Band (eg. US915, AS923, ...). For Colombia, use "US915"!. For Europe, use "EU868".
   {
     SP.println("Failed to start module");
     while (1) {}
   };
-  
+
   String ArdVers = modem.version();
   String DevEUI = modem.deviceEUI();
   SP.print("Your module version is: ");
@@ -109,7 +109,7 @@ void setup(){
     //      https://github.com/arduino/mkrwan1300-fw/issues/3
     //try: modem.setADR(true);
     //modem.dataRate(5);
-    
+
     modem.minPollInterval(10);     // Set poll interval to x seconds
     delay(100);                    // For more Stable Connection
   }
@@ -135,15 +135,16 @@ void loop()
 
 
   short payload1size = 6;
-  
+
+  if(SET_BARO == true){payload1size += 4;}              // If loop for barometer
   if(SET_SCL == true){payload1size += 8;}               // If loops to estimate payload size - implemented only for the 3 sensors discussed
-  if(SET_ADC == true){payload1size += 12;}      
-  if(SET_SMN == true){payload1size += 8;} 
+  if(SET_ADC == true){payload1size += 12;}
+  if(SET_SMN == true){payload1size += 8;}
 
   byte payload1[payload1size];
-  
+
   loopctr++;                                   // Loop Counter
-  
+
   loopstart = millis();                        //MEASUREMENT LOOP
   SP.println();
   SP.print("New Measurement, Starttime: ");
@@ -151,12 +152,13 @@ void loop()
   //Wire.begin();
 
   // ------- ACTIVATE SENSORS ------- //
-  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);            
+  if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, HIGH);
   if (LED_DPORT >= 0) digitalWrite(LED_DPORT, HIGH);
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);
-  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                      // IMU_DPORT HERE
+ // if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                      // IMU_DPORT HERE
+  if (BARO_DPORT >= 0) digitalWrite(BARO_DPORT, HIGH);
   if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
 
   // ------ INITIALIZE ADS1220 ------ //
@@ -186,14 +188,13 @@ void loop()
   //GET INITIAL VALUES
   //int32_t lpotdata = ads1220.read_single_shot();
   //lpotvoltage = ads1220.dac2mv(lpotdata);
-  //lpot = lpotvoltage * 0.9572;
-  }
-  else ads1220.powerdown();
 
+  //else ads1220.powerdown();
+  }
   delay(sensorstarttime);                                // Wait for Sensors to Startup
   SP.println("BREAK: sensors should be started");
 
-  
+
   // ------ INITIALIZE SENSORS AFTER POWERUP ------ //
 
   if (SET_IMU == HIGH ) {                                  // IMU INITIALIZE
@@ -211,18 +212,18 @@ void loop()
     }
 
     myIMU.setAccRange(ICM20948_ACC_RANGE_2G);
-    myIMU.setAccDLPF(ICM20948_DLPF_6);    
+    myIMU.setAccDLPF(ICM20948_DLPF_6);
     myIMU.setAccSampleRateDivider(10);
-    myIMU.setGyrDLPF(ICM20948_DLPF_6);  
+    myIMU.setGyrDLPF(ICM20948_DLPF_6);
     myIMU.setGyrSampleRateDivider(10);
     myIMU.setMagOpMode(AK09916_CONT_MODE_20HZ);
   }
 
   // Barometer Initialization
   if (SET_BARO == true){
-    bmp388.begin();                                            //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE 
+    bmp388.begin();                                            //  BMP INITIALIZE   // Default initialisation, place the BMP388 into SLEEP_MODE
     bmp388.setTimeStandby(TIME_STANDBY_1280MS);                                     // Set the standby time to 1.3 seconds
-    bmp388.startNormalConversion();                                                 // Start BMP388 continuous conversion in NORMAL_MODE  
+    bmp388.startNormalConversion();                                                 // Start BMP388 continuous conversion in NORMAL_MODE
   }
 
   if (SET_SMN == true){                                      // SMN INITIALIZE
@@ -231,9 +232,10 @@ void loop()
 
 
   if (SET_SCL == true) {
-    inclinometer.WakeMeUp();                                 // Turn on Murata
+    //inclinometer.WakeMeUp();                                 // Turn on Murata
     //digitalWrite(SCL3300_Power_PIN, HIGH);
     delay(10);
+    SP.println("Inclinometer woken up.");
 
     if (inclinometer.begin(scl3300_sspin) == false) {                  // SETUP MURATA
       SP.println("Murata SCL3300 inclinometer not connected.");
@@ -243,7 +245,7 @@ void loop()
   }
 
 
-  // ------ MEASUREMENTS ------ //  
+  // ------ MEASUREMENTS ------ //
   measstart = millis();                                                 //Reset Timing & Counters
   BATT_MCTR = 1;
   IMU_MCTR = 1;
@@ -261,7 +263,7 @@ void loop()
   while (millis() - measstart <= measlength)
   {
     meastime = millis() - measstart;
-    
+
     if (BATT_DPORT >= 0 && meastime >= BATT_MINT * BATT_MCTR) {        // BATT VOLTAGE MEASUREMENT
       BATT_MCTR++;
       int batt = analogRead(BATT_APORTin);                             // Read Analog Port
@@ -269,23 +271,24 @@ void loop()
       SP.print("BREAK: Battery voltage finished:");
       SP.println(batt);
     }
-    // check for bar boolean
+
     if (IMU_DPORT >= 0){
       if (SET_BARO == true && meastime >= BARO_MINT * BARO_MCTR) {                         // BARO MEASUREMENT
         BARO_MCTR++;
         if (bmp388.getMeasurements(temperature, pressure, altitude))   // Check if the measurement is complete
         {
-          Serial.print(temperature);                                   // Display the results    
+          Serial.print(temperature);                                   // Display the results
           Serial.print(F("*C   "));
-          Serial.print(pressure);    
+          Serial.print(pressure);
           Serial.print(F("hPa   "));
           Serial.print(altitude);
-          Serial.println(F("m"));  
+          Serial.println(F("m"));
          }
-         meassum[1] = meassum[1] + round(temperature*10);
-         meassum[2] = meassum[2] + round(pressure / 100);            // Pa div. 100 equ. hPa = mBar
+         meassum[1] = meassum[1] + round(temperature*100);
+         meassum[2] = meassum[2] + round(pressure*10);            // Pa div. 100 equ. hPa = mBar
       }
     }
+
     if (SET_SCL == true && meastime >= INKL_MINT * INKL_MCTR){            // SCL Inclinometer Measurement
       INKL_MCTR++;
       if (inclinometer.begin(scl3300_sspin) == false) {
@@ -298,7 +301,7 @@ void loop()
         meassum[3] = meassum[3] + round((inclinometer.getTiltLevelOffsetAngleX())*1000);
         meassum[4] = meassum[4] + round((inclinometer.getTiltLevelOffsetAngleY())*1000);
         meassum[5] = meassum[5] + round((inclinometer.getTiltLevelOffsetAngleZ())*1000);
-      } 
+      }
       else inclinometer.reset();
       delay(10);
     }
@@ -312,7 +315,7 @@ void loop()
       meassum[7] = meassum[7] + smn_y;
       meassum[8] = meassum[8] + smn_z;
       meassum[9] = meassum[9] + smn_temp;
-      
+
     }
     delay(50);                                                          // DELAY after every measurement cycle
   }
@@ -331,37 +334,37 @@ void loop()
         if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
         else {SP.println(("ADS1220 was NOT initialized successfully!"));}
       SP.println();
-          
-      delay(10);                                                        
+
+      delay(10);
       ads1220.config_mux(SE_CH0);
       ads1220.config_gain(PGA_GAIN_1);
       ads1220.config_pga(PGA_OFF);
       int32_t ssdata = ads1220.read_single_shot();
       float voltage = ads1220.dac2mv(ssdata);
       float current = voltage/150;
-      float mbar = 800 + (260/16*(current-4)); 
+      float mbar = 800 + (260/16*(current-4));
       SP.print("SSDATA: ");
       SP.print(ssdata);
       SP.print("C1 voltage: ");
       SP.print(voltage);
       SP.print("C1 mV -- current: ");
       SP.print(current);
-      SP.println(" mbar");  
-      }  
-      if (ADS_C2 == 1){                                                 // Channel 2 measurement (Potentiometer):      
+      SP.println(" mbar");
+      }
+      if (ADS_C2 == 1){                                                 // Channel 2 measurement (Potentiometer):
       ads1220.config_mux(SE_CH2);
       ads1220.config_gain(PGA_GAIN_4);
       ads1220.config_pga(PGA_ON);
       int32_t lpotdata = ads1220.read_single_shot();
       lpotvoltage = ads1220.dac2mv(lpotdata);
       SP.print(lpotvoltage);
-      SP.println(" C2 ipotvoltage");  
+      SP.println(" C2 ipotvoltage");
       }
     }
   }
 
   // ------ MEASUREMENT END AND DEACTIVATING SENSORS ------ //
-  
+
   SP.println("MEASUREMENT END");
   if (BATT_DPORT >= 0) digitalWrite(BATT_DPORT, LOW);
   if (LED_DPORT >= 0) digitalWrite(LED_DPORT, LOW);
@@ -370,9 +373,9 @@ void loop()
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, LOW);
   if (SET_ADC == true) ads1220.powerdown();
   if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, LOW);
-    
+
    if (SET_SMN == true) {
-    if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, LOW); 
+    if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, LOW);
   }
 
 
@@ -391,12 +394,12 @@ void loop()
   int16_t smn1_y = round(meassum[7] / (SMN_MCTR - 1));
   int16_t smn1_z = round(meassum[8] / (SMN_MCTR - 1));
   int16_t smn1_temp = round(meassum[9] / (SMN_MCTR - 1));
-  
+
 
   SP.println("BREAK: Medians, Averages calculated");
-                                                                                 
+
   int8_t battery = 10 * (round(meassum[0] / (BATT_MCTR - 1))) * 3.3 / 4095 * (BATT_R1 + BATT_R2) / (BATT_R1);    // Calculate battvolt - 10 times the battery voltage in volts
-                                                                                 
+
   payload1[0] = payload1size;                                                    // Create byte array to send (see https://www.thethingsnetwork.org/docs/devices/bytes.html for byte encoding examples)
   payload1[1] = highByte(desig);
   payload1[2] = lowByte(desig);
@@ -405,23 +408,21 @@ void loop()
   payload1[5] = battery;
 
   int i = 5;
-  
+
   if(SET_ADC == true)
     {
     // Which measurment for ADC VALUES???
     // twelve more measurements
     i = i+12;
-    } 
+    }
 
-  if (SET_BARO == true) 
+  if (SET_BARO == true)
     {
-    payload1[i+1] = ((int16_t)(round(meassum[1] / (BARO_MCTR - 1)))) >> 16;
-    payload1[i+2] = ((int16_t)(round(meassum[1] / (BARO_MCTR - 1)))) >> 8;
-    payload1[i+3] = ((int16_t)(round(meassum[1] / (BARO_MCTR - 1))));
-    payload1[i+4] = ((int16_t)(round(meassum[2] / (BARO_MCTR - 1)))) >> 16;
-    payload1[i+5] = ((int16_t)(round(meassum[2] / (BARO_MCTR - 1)))) >> 8;
-    payload1[i+6] = ((int16_t)(round(meassum[2] / (BARO_MCTR - 1))));  
-    i = i+6;
+    payload1[i+1] = highByte((int16_t)(round(meassum[1] / (BARO_MCTR - 1))));
+    payload1[i+2] = lowByte((int16_t)(round(meassum[1] / (BARO_MCTR - 1))));
+    payload1[i+3] = highByte((int16_t)(round(meassum[2] / (BARO_MCTR - 1))));
+    payload1[i+4] = highByte((int16_t)(round(meassum[2] / (BARO_MCTR - 1)))) >> 16;
+    i = i+4;
     }
 
   if(SET_SCL == true)
@@ -433,8 +434,8 @@ void loop()
     payload1[i+5] = highByte((int16_t)(round(meassum[5] / (INKL_MCTR - 1))));              // inkl_z
     payload1[i+6] = lowByte((int16_t)(round(meassum[5] / (INKL_MCTR - 1))));
     i = i+6;
-    }    
-       
+    }
+
   if(SET_SMN == true)
     {
     payload1[i+1] = highByte((int16_t)(round(meassum[6] / (SMN_MCTR - 1))));             //smn1_x
@@ -456,21 +457,20 @@ void loop()
 
   if (SET_BARO == true)
   {
-  sprintf(report, "INCL: %6d %6d %6d; T: %6d; P: %6d",            // Display data on SP port
-          inkl_x, inkl_y, inkl_z,
+  sprintf(report, "BMP388: T: %6d; P: %6d",            // Display data on SP port
           temp, prsr);
   SP.println(report);
   SP.println();
   }
-  
+
   if (SET_SCL == true)
   {
-  sprintf(report, "T: %6d; P: %6d",            // Display data on SP port
+  sprintf(report, "SCL: %6d %6d %6d",            // Display data on SP port
           inkl_x, inkl_y, inkl_z);
   SP.println(report);
   SP.println();
   }
-  
+
   if (SET_SMN == true)
   {
   sprintf(report, "INCL: %6d %6d %6d; TEMP: %6d",
@@ -485,15 +485,15 @@ void loop()
   String values[10];                                     // Maximum number of commands per message = 10
   int m = 0;                                             // Command counter
   int err;
-  
+
   //modem.dataRate(5);                                   // Set dataRate manually: Usually deactivated to allow for automatic data rate adaptation depending on signal to Noise Ratio, 5: switch to SF7
   delay(100);                                            // For more Stable Connection
   modem.beginPacket();                                   // modem.beginPacket startet das Packet das mit LoRa versendet wird
-                                         
+
   if (desig == 1) {
     SP.println("LoRa Infrastructure Node");
   }
-  
+
   modem.write(payload1, payload1size);
   err = modem.endPacket(true);                            //When modem.endPacket(true), then confirmed data sent!
   if (err > 0){
@@ -507,7 +507,7 @@ void loop()
 
 
   // ------ CHECK DATA UPLOAD ------  //
-  if (!modem.available()){                                
+  if (!modem.available()){
     SP.println("No downlink message received at this time.");
   }
   else{
@@ -526,7 +526,7 @@ void loop()
     SP.print(" ");
     }
     */
- 
+
     String RcvStr = "";                                    // PRINT AS TXT
     for (unsigned int j = 0; j < i; j++) {
       RcvStr = RcvStr + rcv[j];
@@ -600,7 +600,7 @@ void loop()
     SP.println("Warning! Sleeptime is too low - was set to 10000 ms");
   }
 
-  
+
   // ------ SET DIGITAL PORTS FOR SLEEP ------ //
   SP.println("Setting digital ports for sleep:");
   for (int i = 0; i <= 7; i++) {
