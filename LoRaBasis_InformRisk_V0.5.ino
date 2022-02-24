@@ -4,7 +4,7 @@
 
     LoRaBasis_InformRisk
     Version: 0.6
-    Date: 22.02.2022
+    Date: 24.02.2022
 
     Supported Hardware:
     BOARDS:
@@ -157,8 +157,7 @@ void loop()
   if (SW33_A_DPORT >= 0) digitalWrite(SW33_A_DPORT, HIGH);
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);
- // if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                      // IMU_DPORT HERE
-  if (BARO_DPORT >= 0) digitalWrite(BARO_DPORT, HIGH);
+  if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                      // IMU_DPORT HERE
   if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
 
   // ------ INITIALIZE ADS1220 ------ //
@@ -397,8 +396,15 @@ void loop()
 
 
   SP.println("BREAK: Medians, Averages calculated");
-
-  int8_t battery = 10 * (round(meassum[0] / (BATT_MCTR - 1))) * 3.3 / 4095 * (BATT_R1 + BATT_R2) / (BATT_R1);    // Calculate battvolt - 10 times the battery voltage in volts
+  int8_t battery = 0;
+  if (battv > 2207)
+  {
+    int8_t battery = round(1000*(0.0008*battv^2 - 3.3705*battv + 3678.6));
+  }
+  else
+  {
+    int8_t battery = round(1000*(0.0033*battv + 0.2608));
+  }
 
   payload1[0] = payload1size;                                                    // Create byte array to send (see https://www.thethingsnetwork.org/docs/devices/bytes.html for byte encoding examples)
   payload1[1] = highByte(desig);
