@@ -271,9 +271,10 @@ void loop()
       SP.println(batt);
     }
 
-    if (IMU_DPORT >= 0){
+if (IMU_DPORT >= 0){
       if (SET_BARO == true && meastime >= BARO_MINT * BARO_MCTR) {                         // BARO MEASUREMENT
         BARO_MCTR++;
+        bmp388.startForcedConversion();                 // Start a forced conversion (if in SLEEP_MODE)
         if (bmp388.getMeasurements(temperature, pressure, altitude))   // Check if the measurement is complete
         {
           Serial.print(temperature);                                   // Display the results
@@ -282,9 +283,13 @@ void loop()
           Serial.print(F("hPa   "));
           Serial.print(altitude);
           Serial.println(F("m"));
-         }
          meassum[1] = meassum[1] + round(temperature*100);
          meassum[2] = meassum[2] + round(pressure*10);            // Pa div. 100 equ. hPa = mBar
+       }
+       else
+       {
+         SP.Print("BMP388 Could not measure")
+       }
       }
     }
 
