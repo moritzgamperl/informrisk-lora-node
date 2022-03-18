@@ -16,12 +16,15 @@ The firmware is structured in four files, whose functions are listed in the foll
 
 File | Function
 --------------|-------------
-informrisk-lora-node.ino  |  main code (loop, measurements, data transmission)
-array.h  |   array-function for median
-arduino_secrets.h |  App EUI and KEY 
-config.h   | configuration file (timing, sensor state, hardware settings)
+informrisk-lora-node.ino  |  Main Code (loop, measurements, data transmission)
+Uni_Config.h  |   Configuration file containing universal includes and variables
+ADC_Config.h  |   Configuration file for the ADC Sensor
+SCL_Config.h |  Configuration file for the SCL Sensor
+SMN_Config.h |  Configuration file for the SMN Sensor
+arduino_Secrets.h  |   File to store keys obtained from TheThingsNetwork console
+extra_functions.h  |   Additional functions to support the main code
 
-When setting up a node, changes should only be made in the ''config.h'' and ''arduino_secrets.h'' files. All flexible parameters in the main file can be changed using the config file.
+When setting up a node, changes should only be made in the ''Uni_config.h'' and ''arduino_secrets.h'' files. All flexible parameters in the main file can be changed using the config file.
 
 ## Sensor libraries
 
@@ -55,12 +58,16 @@ These parameters control the overall state of the sensors. Here, individual sens
 Parameter | Description
 --------------|-------------
 desig  |  defines type of payload and sensors
+settings_desig  |  Defines the subclass of sensor combinations used.
 SET_IMU   |   turns the IMU on/off
 SET_ADC   | turns the ADC on/off
 SET_SCL | turns the SCL3300 on/off
 SET_SMN | turns the SMN overall on/off (all sensors and measurements)
+SET_BARO  | turns the standard barometer on/off
 
 The designator (desig) defines, which type of LoRa node is used. This has implications for the payload, e.g. a LIN payload does not include StpCtr or groundwater data, while a Subsurface Node usually does not include SCL3300 data. In the future, we may add more desig options, but this has to be implemented on the network side as well.
+
+The Settings Designator (settings_desig) indicates a single type of LoRa node used, but defines the various combinations of the sensors available for that type of LoRa node. The combinations are indicated in the excel sheet.  
 
 ### Hardware settings
 
