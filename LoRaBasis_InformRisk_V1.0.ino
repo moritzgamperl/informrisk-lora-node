@@ -1,10 +1,10 @@
 /*  Inform@Risk LoRa Node
     (c) AlpGeorisk & TUM
-    Authors: Moritz Gamperl & John Singer
+    Authors: Ashwanth Ramesh, Moritz Gamperl & John Singer
 
     LoRaBasis_InformRisk
-    Version: 0.6
-    Date: 24.02.2022
+    Version: 1.0
+    Date: 26.03.2022
 
     Supported Hardware:
     BOARDS:
