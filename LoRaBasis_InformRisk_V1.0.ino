@@ -33,6 +33,7 @@ void setup(){
   Wire.begin();
 
   if (SET_SMN == false) I1_PORT = -1;
+  if (SET_SMN == false) I2_PORT = -1;
 
 
 // ----- SETUP DIGITAL PINS ------ // : Set measurement pins to output, set unused pins to input_pullup
@@ -40,7 +41,7 @@ void setup(){
   SP.println("Setting up Digital ports:");
   for (int i = 0; i <= 7; i++) {
     SP.print(i);
-    if (i == BATT_DPORT || i == SW33_A_DPORT || i == SW33_B_DPORT || i == SW12_DPORT || i == LED_DPORT || i == IMU_DPORT || i == StpCtr1_DPORT)         
+    if (i == BATT_DPORT || i == SW33_A_DPORT || i == SW33_B_DPORT || i == SW12_DPORT || i == LED_DPORT || i == IMU_DPORT || i == I1_PORT)         
     {        
       pinMode(i, OUTPUT);
       SP.print(": Output");
@@ -80,13 +81,15 @@ void setup(){
   SP.println("Relay Setup Successful");
 
   if(SET_SMN == true) desig = 2;
+  if(SET_LCI == true) desig = 3;
+  
 
   delay(sensorstarttime);                                            // wait for sensors to startup
   
   // ------ CONNECT TO LORA NETWORK ------ //
 
   SP.println("Connecting to the Lora Network");
-  if (!modem.begin(EU868))                               // Change this to your Regional Band (eg. US915, AS923, ...). For Colombia, use "US915"!. For Europe, use "EU868".
+  if (!modem.begin(US915))                               // Change this to your Regional Band (eg. US915, AS923, ...). For Colombia, use "US915"!. For Europe, use "EU868".
   {
     SP.println("Failed to start module");
     while (1) {}
@@ -99,10 +102,36 @@ void setup(){
   SP.print("Your device EUI is: ");
   SP.println(DevEUI);
 
+  // Print default channels configuration
+  Serial.print("- Default mask: ");
+  Serial.println(modem.getChannelMask());
+
+  Serial.println("- Disabling all channels...");  
+  for (unsigned int i = 0; i < 72; i++) {
+  modem.disableChannel(i);
+  }
+
+  // Print current channels configuration
+  Serial.print("- Current mask: ");
+  Serial.println(modem.getChannelMask());
+
+  // Enable US915-928 channels
+  // LoRaWAN® Regional Parameters and TTN specification: channels 8 to 15 plus 65 
+  Serial.println("- Enabling channels 8 to 15 plus 65...");  
+  for (unsigned int i = 8; i <= 15; i++) {
+    modem.enableChannel(i);
+  }
+  modem.enableChannel(65);
+
+   // Print current channels configuration
+  Serial.print("- Current mask: ");
+  Serial.println(modem.getChannelMask());
+
   connection:
-  Connected = modem.joinOTAA(appEui, appKey);        // Attempt to Join LoRaWAN Network using Over-The-Air-Activation (OTAA)
+  Serial.println("- Joining Server - This may take a while... Timeout @ 150 sec");
+  Connected = modem.joinOTAA(appEui, appKey, "", 150000);        // Attempt to Join LoRaWAN Network using Over-The-Air-Activation (OTAA)
   int x = modem.connected();
-  SP.println(report);
+  SP.println(x);
   delay(100);
   if (Connected)
   {
@@ -154,7 +183,7 @@ void loop()
     restart:    
     for (int i = 0; i <=1; i++)
     {
-      Connected = modem.joinOTAA(appEui, appKey);                      // Attempt to Join LoRaWAN Network using Over-The-Air-Activation (OTAA)
+      Connected = modem.joinOTAA(appEui, appKey, "", 150000);        // Attempt to Join LoRaWAN Network using Over-The-Air-Activation (OTAA)
       if(Connected == 0)
       {
         SP.println("Something went wrong; Are you indoors? Move near a Window and Retry");
@@ -183,12 +212,17 @@ void loop()
   short datasize = 6;
 
   if(SET_BARO == true){datasize += 4;}                       // If loop for barometer
-  if(SET_SCL == true){datasize += 9;}                        // If loops to estimate payload size - implemented only for the 3 sensors discussed
-  if(SET_ADC == true){datasize += 12;}
+  if(SET_SCL == true){datasize += 11;}                        // If loops to estimate payload size - implemented only for the 3 sensors discussed
+  if(SET_ADC == true){datasize += 3;}
   if(SET_SMN == true){datasize += 8;}
+  if(SET_LCI == true){datasize += 24;}                          
   
   long meassum[datasize];                                    // Array with summerized measurements // Achtung! Länge = max i + 1, da indizierung mit 0 losgeht
   byte payload1[datasize];
+
+  SP.print("Payload Size: ");
+  SP.println(datasize);
+
 
   loopctr++;                                                 // Loop Counter
 
@@ -207,45 +241,9 @@ void loop()
   if (SW33_B_DPORT >= 0) digitalWrite(SW33_B_DPORT, HIGH);
   if (SW12_DPORT >= 0) digitalWrite(SW12_DPORT, HIGH);
   if (IMU_DPORT >= 0) digitalWrite(IMU_DPORT, HIGH);                      // IMU_DPORT HERE
-  if (StpCtr1_DPORT >= 0) digitalWrite(StpCtr1_DPORT, HIGH);
+  if (I1_PORT >= 0) digitalWrite(I1_PORT, HIGH);
 
-// ------ INITIALIZE ADS1220 ------ //
 
-  if (SET_ADC)
-  {
-  SP.println("ADS1220 Initialization...");
-  if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
-  else 
-  {
-    ads1220.powerdown();
-    SP.println("ADS1220 was NOT initialized successfully!");
-  }
-  SP.println();
-
-// ------ CALIBRATE ADS1220 ------ //
-  if (ADC_CAL == true)
-  {
-  SP.println("ADS1220 Calibration (this may take a few seconds)...");
-  ads1220.calibrate();
-  SP.println();
-  }
-  ads1220.config_datarate(DR_20SPS);
-  ads1220.config_opmode(OM_NORMAL);
-  ads1220.config_conmode(CM_SINGLE_SHOT);
-  ads1220.config_tempmode(TEMP_OFF);
-  ads1220.config_burnout(BO_OFF);
-  ads1220.config_vref(VREF_AVDD);
-  ads1220.config_fir(FIR_50_60);
-  ads1220.config_idac_cur(IDAC_CUR_500);
-  ads1220.config_idac1(IDAC1_REFN0);
-  //ads1220.config_idac2(IDAC2_AIN3);
-  //delay(200);                                          //Delay to powerup IDAC - removed because of sensorstarttime
-  //GET INITIAL VALUES
-  //int32_t lpotdata = ads1220.read_single_shot();
-  //lpotvoltage = ads1220.dac2mv(lpotdata);
-
-  //else ads1220.powerdown();
-  }
   delay(sensorstarttime);                                // Wait for Sensors to Startup
   SP.println("BREAK: sensors should be started");
 
@@ -285,16 +283,34 @@ void loop()
       delay (100);
       if (inkl_a.initialize(BMA4_I2C_ADDR_SECONDARY, RANGE_2G, ODR_6_25_HZ, NORMAL_AVG4, CIC_AVG) == 0) 
       {
-        Serial.println("INKL_A: Successfully connected to BMA456");
+        SP.println("INKL_A: Successfully connected to BMA456");
         inkl_a_init = 1;
       }
       else 
       {
-        Serial.println("INKL_A: Connection error - BMA could not be initialized!");
+        SP.println("INKL_A: Connection error - BMA could not be initialized!");
         inkl_a_init = 0;
       }
     }
     else SP.println("I1A not activated");
+  }
+
+   if (SET_LCI == true)                                         // SMN INITIALIZE
+  {                                        
+    if(I1B == true)
+    {
+      if (inkl_b.initialize(BMA4_I2C_ADDR_PRIMARY, RANGE_2G, ODR_6_25_HZ, NORMAL_AVG4, CIC_AVG) == 0) 
+      {
+        SP.println("INKL_B: Successfully connected to BMA456");
+        inkl_b_init = 1;
+      }
+      else 
+      {
+        SP.println("INKL_B: Connection error - BMA could not be initialized!");
+        inkl_b_init = 0;
+      }
+    }
+    else SP.println("I1B not activated");
   }
 
 
@@ -313,14 +329,52 @@ void loop()
     //inclinometer.setMode(mode);
   }
 
-  if (SET_ADC == true){
+ /* if (SET_ADC == true){
       SP.println("ADS1220 Initialization...");
       if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
       else {SP.println(("ADS1220 was NOT initialized successfully!"));}
       SP.println();
-      Serial.println("ADS1220 Calibration (this may take a few seconds)...");
+      SP.println("ADS1220 Calibration (this may take a few seconds)...");
       ads1220.calibrate();
-      Serial.println();
+      SP.println();
+  } */
+
+  // ------ INITIALIZE ADS1220 ------ //
+
+  if (SET_ADC)
+  {
+  SP.println("ADS1220 Initialization...");
+  if (ads1220.begin(ADS1220_CS_PIN,ADS1220_DRDY_PIN)) {SP.println("ADS1220 initialized successfully!");}
+  else 
+  {
+    ads1220.powerdown();
+    SP.println("ADS1220 was NOT initialized successfully!");
+  }
+  SP.println();
+
+// ------ CALIBRATE ADS1220 ------ //
+  if (ADC_CAL == true)
+  {
+  SP.println("ADS1220 Calibration (this may take a few seconds)...");
+  ads1220.calibrate();
+  SP.println();
+  }
+  ads1220.config_datarate(DR_20SPS);
+  ads1220.config_opmode(OM_NORMAL);
+  ads1220.config_conmode(CM_SINGLE_SHOT);
+  ads1220.config_tempmode(TEMP_OFF);
+  ads1220.config_burnout(BO_OFF);
+  ads1220.config_vref(VREF_AVDD);
+  ads1220.config_fir(FIR_50_60);
+  ads1220.config_idac_cur(IDAC_CUR_500);
+  ads1220.config_idac1(IDAC1_REFN0);
+  //ads1220.config_idac2(IDAC2_AIN0);
+  //delay(200);                                          //Delay to powerup IDAC - removed because of sensorstarttime
+  //GET INITIAL VALUES
+  //int32_t lpotdata = ads1220.read_single_shot();
+  //lpotvoltage = ads1220.dac2mv(lpotdata);
+
+  //else ads1220.powerdown();
   }
 
   // ------ MEASUREMENTS ------ //
@@ -349,7 +403,7 @@ void loop()
       BATT_MCTR++;
       int batt = analogRead(BATT_APORTin);                             // Read Analog Port
       meassum[0] = meassum[0] + batt;
-      SP.print("BREAK: Battery voltage finished:");
+      SP.print("BREAK: Battery voltage finished: ");
       SP.println(batt);
     }
 
@@ -383,6 +437,7 @@ void loop()
         SP.println("Murata SCL3300 inclinometer not connected.");
         while(1);                                                      //Freeze
       }
+      delay(10);
       //inclinometer.setMode(mode);
       if (inclinometer.available())
       {
@@ -412,25 +467,25 @@ void loop()
         meassum[9] = meassum[9] + temp_a;
         SMN_VCTR++;
       }
+      if (inkl_b_init)
+      {
+        inkl_b.getAcceleration(&x_b, &y_b, &z_b);
+        temp_b = inkl_b.getTemperature();
+        meassum[12] = meassum[12] + (x_b*100);                        // Adjust according to precision of BMA Sensor
+        meassum[13] = meassum[13] + (y_b*100);
+        meassum[14] = meassum[14] + (z_b*100);
+        meassum[15] = meassum[15] + temp_b;
+      }
     }
-    delay(50);                                                          // DELAY after every measurement cycle
-  }
 
- if (SET_SCL == true)                                                   // Turn off Murata
- {                                                 
-    //digitalWrite(SCL3300_Power_PIN, LOW);
-    digitalWrite(SCL3300_CS_PIN, HIGH);
-    inclinometer.powerDownMode();
-  }
-
-  while(SET_ADC == true && meastime >= ADC_MINT * ADC_MCTR)              // ADC MEASUREMENT
+     while(SET_ADC == true && meastime >= ADC_MINT * ADC_MCTR)              // ADC MEASUREMENT
   {                                                 
     ADC_MCTR++;
-      if (ADS_C0 == true)
+      if (ADS_C3 == true)
       {      
-      //CHannel 1 measurement (4-20 mA):
-      //SETUP & MEASURE LINEARPOTI on CHANNEL 2
-      ads1220.config_mux(SE_CH0);
+      //CHannel 3 measurement (4-20 mA):
+      //SETUP & MEASURE LINEARPOTI on CHANNEL 3
+      ads1220.config_mux(SE_CH3);
       ads1220.config_gain(PGA_GAIN_1);
       ads1220.config_pga(PGA_OFF);
       ads1220.config_datarate(DR_20SPS);
@@ -453,17 +508,103 @@ void loop()
       ADC_VCTR++;
       
       }
-      if (ADS_C2 == 1)                                        // Channel 2 measurement (Potentiometer):
+      if (ADS_C0 == true)                                        // Channel 0 measurement (Potentiometer):
       {                                                 
-      ads1220.config_mux(SE_CH2);
-      ads1220.config_gain(PGA_GAIN_4);
-      ads1220.config_pga(PGA_ON);
+      ads1220.config_mux(SE_CH0);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_AVDD);
+      ads1220.config_fir(FIR_50_60);
+      delay(100);
       int32_t lpotdata = ads1220.read_single_shot();
-      lpotvoltage = ads1220.dac2mv(lpotdata);
-      SP.print(lpotvoltage);
-      SP.println(" C2 ipotvoltage");
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      meassum[10] = meassum[10] + ads1220.dac2mv(lpotdata);
+      //meassum[11] = meassum[11] + lpotvoltage;
+      SP.print(lpotdata);
+      SP.println(" C0 ipotvoltage");
       }
     }
+    
+    delay(50);                                                          // DELAY after every measurement cycle
+  }
+
+ if (SET_SCL == true)                                                   // Turn off Murata
+ {                                                 
+    //digitalWrite(SCL3300_Power_PIN, LOW);
+    digitalWrite(SCL3300_CS_PIN, HIGH);
+    inclinometer.powerDownMode();
+  }
+
+  if (SET_LCI == true)
+  {
+    digitalWrite(I1_PORT, LOW);
+    delay (100);         
+                                   
+    if(I2A == true) // ACTIVATE I2A
+     {
+      digitalWrite(I2_PORT, HIGH);
+      delay (100);
+      if (inkl_a.initialize(BMA4_I2C_ADDR_SECONDARY, RANGE_2G, ODR_6_25_HZ, NORMAL_AVG4, CIC_AVG) == 0) 
+      {
+        SP.println("INKL_A: Successfully connected to BMA456");
+        inkl_a_init = 1;
+      }
+      else 
+      {
+        SP.println("INKL_A: Connection error - BMA could not be initialized!");
+        inkl_a_init = 0;
+      }
+    }
+    else SP.println("I2A not activated");
+
+    
+      if(I2B == true) // ACTIVATE I2B
+    {
+      digitalWrite(I2_PORT, HIGH);
+      delay (100);
+      if (inkl_b.initialize(BMA4_I2C_ADDR_PRIMARY, RANGE_2G, ODR_6_25_HZ, NORMAL_AVG4, CIC_AVG) == 0) 
+      {
+        SP.println("INKL_B: Successfully connected to BMA456");
+        inkl_b_init = 1;
+      }
+      else 
+      {
+        SP.println("INKL_B: Connection error - BMA could not be initialized!");
+        inkl_b_init = 0;
+      }
+    }
+    else SP.println("I2B not activated");
+
+    // 5 LCI MEASUREMENTS
+    
+        for (int i = 0; i < 5; i++) {
+              
+    if (inkl_a_init) {
+      inkl_a.getAcceleration(&x_a, &y_a, &z_a);
+      temp_a = inkl_a.getTemperature();
+        meassum[16] = meassum[16] + (x_a*100);                        // Adjust according to precision of BMA Sensor
+        meassum[17] = meassum[17] + (y_a*100);
+        meassum[18] = meassum[18] + (z_a*100);
+        meassum[19] = meassum[19] + temp_a;
+        }
+    if (inkl_b_init) { 
+      inkl_b.getAcceleration(&x_b, &y_b, &z_b);
+      temp_b = inkl_b.getTemperature();
+      meassum[20] = meassum[20] + (x_b*100);                        // Adjust according to precision of BMA Sensor
+      meassum[21] = meassum[21] + (y_b*100);
+      meassum[22] = meassum[22] + (z_b*100);
+      meassum[23] = meassum[23] + temp_b;
+      }
+    delay(150); // Adapt to measurement frequency selected above
+    }
+      }
+
+ 
   
 
   // ------ MEASUREMENT END AND DEACTIVATING SENSORS ------ //
@@ -479,13 +620,23 @@ void loop()
 
    if (SET_SMN == true)
    {
-    Serial.println("Deactivating SMN Sensors...");
+    SP.println("Deactivating SMN Sensors...");
     if(I1A == true)
+    {
+     // inkl_a.accel_enable(AKM_POWER_DOWN_MODE);
+    }
+    //inkl_b.accel_enable(AKM_POWER_DOWN_MODE);
+    if (I1_PORT >= 0) {digitalWrite(I1_PORT, LOW);}
+  }
+  if (SET_LCI == true)
+  {
+    SP.println("Deactivating LCI...");
+    if(I2A == true)
     {
       inkl_a.accel_enable(AKM_POWER_DOWN_MODE);
     }
     //inkl_b.accel_enable(AKM_POWER_DOWN_MODE);
-    if (I1_PORT >= 0) {digitalWrite(I1_PORT, LOW);}
+    if (I2_PORT >= 0) {digitalWrite(I1_PORT, LOW);}
   }
 
 
@@ -493,6 +644,10 @@ void loop()
   SP.println(millis() - loopstart);
 
   int16_t battv = round(meassum[0] / (BATT_MCTR - 1));                          //Calculate averages
+  SP.print("Meassum Batt: ");         //Display measurement duration
+  SP.println(meassum[0]);
+  SP.print("Battv: ");         //Display measurement duration
+  SP.println(battv);
 
   if (battv > 2207)
   {
@@ -504,7 +659,7 @@ void loop()
   else
   {
     battery = round(10*((0.0033*battv) + 0.2608));
-    sprintf(report, "Inside second one %6d",
+    sprintf(report, "Battery voltage high %6d",
           battery);
     SP.println(report);
   }
@@ -522,13 +677,6 @@ void loop()
 
   int i = 5;
 
-  /*if(SET_ADC == true)
-    {
-    // Which measurment for ADC VALUES???
-    // twelve more measurements
-    i = i+12;
-    }
-  */
   if (SET_BARO == true)
     {
     payload1[i+1] = highByte((int16_t)(round(meassum[1] / (BARO_VCTR - 1))));            //Temperature
@@ -549,7 +697,7 @@ void loop()
     payload1[i+9] = (int32_t)(round(meassum[5] / (INKL_VCTR - 1)));
     payload1[i+8] = (((int32_t)(round(meassum[5] / (INKL_VCTR - 1))))>>8);
     payload1[i+7] = (((int32_t)(round(meassum[5] / (INKL_VCTR - 1))))>>16);
-    i = i+9;
+    i = i+11;     // For now 11 because of missing temperature measurement
     }
 
   if(SET_ADC == true)
@@ -572,6 +720,38 @@ void loop()
     payload1[i+8] = lowByte((int16_t)(round(meassum[9] / (SMN_VCTR - 1))));
     i = i+8;
     }
+
+  if(SET_LCI == true)
+    {
+    payload1[i+1] = highByte((int16_t)(round(meassum[12] / (SMN_VCTR - 1))));             //I1B_x
+    payload1[i+2] = lowByte((int16_t)(round(meassum[12] / (SMN_VCTR - 1))));
+    payload1[i+3] = highByte((int16_t)(round(meassum[13] / (SMN_VCTR - 1))));             //I1B_y
+    payload1[i+4] = lowByte((int16_t)(round(meassum[13] / (SMN_VCTR - 1))));
+    payload1[i+5] = highByte((int16_t)(round(meassum[14] / (SMN_VCTR - 1))));             //I1B_z
+    payload1[i+6] = lowByte((int16_t)(round(meassum[14] / (SMN_VCTR - 1))));
+    payload1[i+7] = highByte((int16_t)(round(meassum[15] / (SMN_VCTR - 1))));             //I1B_temp
+    payload1[i+8] = lowByte((int16_t)(round(meassum[15] / (SMN_VCTR - 1))));
+
+    payload1[i+9] = highByte((int16_t)(round(meassum[16] / (5))));             //I2A_x
+    payload1[i+10] = lowByte((int16_t)(round(meassum[16] / (5))));
+    payload1[i+11] = highByte((int16_t)(round(meassum[17] / (5))));             //I2A_y
+    payload1[i+12] = lowByte((int16_t)(round(meassum[17] / (5))));
+    payload1[i+13] = highByte((int16_t)(round(meassum[18] / (5))));             //I2A_z
+    payload1[i+14] = lowByte((int16_t)(round(meassum[18] / (5))));
+    payload1[i+15] = highByte((int16_t)(round(meassum[19] / (5))));             //I2A_temp
+    payload1[i+16] = lowByte((int16_t)(round(meassum[19] / (5))));
+
+    payload1[i+17] = highByte((int16_t)(round(meassum[20] / (5))));             //I2B_x
+    payload1[i+18] = lowByte((int16_t)(round(meassum[20] / (5))));
+    payload1[i+19] = highByte((int16_t)(round(meassum[21] / (5))));             //I2B_y
+    payload1[i+20] = lowByte((int16_t)(round(meassum[21] / (5))));
+    payload1[i+21] = highByte((int16_t)(round(meassum[22] / (5))));             //I2B_z
+    payload1[i+22] = lowByte((int16_t)(round(meassum[22] / (5))));
+    payload1[i+23] = highByte((int16_t)(round(meassum[23] / (5))));             //I2B_temp
+    payload1[i+24] = lowByte((int16_t)(round(meassum[23] / (5))));
+
+    i = i+24;
+    }    
 
   long temp = (round(meassum[1] / (BARO_VCTR - 1)));
   sprintf(report, "Average Temperature %6d", temp);
