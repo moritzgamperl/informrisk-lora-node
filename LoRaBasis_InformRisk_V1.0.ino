@@ -28,7 +28,7 @@ void setup(){
 
   SP.println("Starting Arduino...., Inside Setup");
 
-  SP.begin(9600);                                        // OPEN Serial PORT -- used for development purposes
+  SP.begin(115200);                                        // OPEN Serial PORT -- used for development purposes
   while (!SP && millis() < 5000);                        // Wait 5 secs for Serial connection otherwise continue anyway...
   Wire.begin();
 
@@ -75,7 +75,20 @@ void setup(){
   pinMode(A4, OUTPUT);                                               // Relais K2
   pinMode(A5, OUTPUT);
   K2_AllOff ();
-  
+
+  delay(100);
+
+  if (ADS_C1 == 2) 
+  {
+    SP.println("Turning on Relais for Channel 1");
+    K1_TurnA ();               // turn on pullup resistors
+  }
+  if (ADS_C2 == 2) 
+  {
+    SP.println("Turning on Relais for Channel 2");
+    K2_TurnA ();
+  }
+
   analogReadResolution(12);                                          // SETUP ANALOG INPUT
 
   SP.println("Relay Setup Successful");
@@ -89,7 +102,7 @@ void setup(){
   // ------ CONNECT TO LORA NETWORK ------ //
 
   SP.println("Connecting to the Lora Network");
-  if (!modem.begin(US915))                               // Change this to your Regional Band (eg. US915, AS923, ...). For Colombia, use "US915"!. For Europe, use "EU868".
+  if (!modem.begin(EU868))                               // Change this to your Regional Band (eg. US915, AS923, ...). For Colombia, use "US915"!. For Europe, use "EU868".
   {
     SP.println("Failed to start module");
     while (1) {}
@@ -103,7 +116,7 @@ void setup(){
   SP.println(DevEUI);
 
   // Print default channels configuration
-  Serial.print("- Default mask: ");
+  /*Serial.print("- Default mask: ");
   Serial.println(modem.getChannelMask());
 
   Serial.println("- Disabling all channels...");  
@@ -125,7 +138,7 @@ void setup(){
 
    // Print current channels configuration
   Serial.print("- Current mask: ");
-  Serial.println(modem.getChannelMask());
+  Serial.println(modem.getChannelMask());*/
 
   connection:
   Serial.println("- Joining Server - This may take a while... Timeout @ 150 sec");
@@ -481,35 +494,8 @@ void loop()
      while(SET_ADC == true && meastime >= ADC_MINT * ADC_MCTR)              // ADC MEASUREMENT
   {                                                 
     ADC_MCTR++;
-      if (ADS_C3 == true)
-      {      
-      //CHannel 3 measurement (4-20 mA):
-      //SETUP & MEASURE LINEARPOTI on CHANNEL 3
-      ads1220.config_mux(SE_CH3);
-      ads1220.config_gain(PGA_GAIN_1);
-      ads1220.config_pga(PGA_OFF);
-      ads1220.config_datarate(DR_20SPS);
-      ads1220.config_opmode(OM_NORMAL);
-      ads1220.config_conmode(CM_SINGLE_SHOT);
-      ads1220.config_tempmode(TEMP_OFF);
-      ads1220.config_burnout(BO_OFF);
-      ads1220.config_vref(VREF_INT);
-      ads1220.config_fir(FIR_NONE);
-      ads1220.config_idac_cur(IDAC_CUR_10);
-      ads1220.config_idac2(IDAC2_OFF);
-      ads1220.config_idac1(IDAC1_REFN0);
-      delay(200); //Delay to powerup IDAC
-      int32_t lpotdata = ads1220.read_single_shot();
-      float lpotvoltage = ads1220.dac2mv(lpotdata);
-      float current = lpotvoltage/150;
-      float mbar = 800 + (260/16*(current-4));
-      meassum[10] = meassum[10] + lpotdata;
-      meassum[11] = meassum[11] + lpotvoltage;
-      ADC_VCTR++;
-      
-      }
-      if (ADS_C0 == true)                                        // Channel 0 measurement (Potentiometer):
-      {                                                 
+      if (ADS_C0 == 1)                                        // Channel 0 measurement (Potentiometer):
+      {                                      
       ads1220.config_mux(SE_CH0);
       ads1220.config_gain(PGA_GAIN_1);
       ads1220.config_pga(PGA_OFF);
@@ -524,10 +510,203 @@ void loop()
       int32_t lpotdata = ads1220.read_single_shot();
       float lpotvoltage = ads1220.dac2mv(lpotdata);
       meassum[10] = meassum[10] + ads1220.dac2mv(lpotdata);
-      //meassum[11] = meassum[11] + lpotvoltage;
       SP.print(lpotdata);
+      SP.println(" C0 ipotdata");
+      SP.print(lpotvoltage);
       SP.println(" C0 ipotvoltage");
       }
+
+      if (ADS_C0 == 2)                                        // Channel 0 measurement (Potentiometer 4-20mA):
+      {
+      digitalWrite(SW12_DPORT, HIGH);                                                   // Turn on 12V OUT
+      delay(100);                                                 
+      ads1220.config_mux(SE_CH0);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_INT);
+      ads1220.config_fir(FIR_NONE);
+      ads1220.config_idac_cur(IDAC_CUR_10);
+      ads1220.config_idac2(IDAC2_OFF);
+      ads1220.config_idac1(IDAC1_REFN0);
+      delay(100); //Delay to powerup IDAC
+      int32_t lpotdata = ads1220.read_single_shot();
+      digitalWrite(SW12_DPORT, LOW);                                                   // Turn off 12V OUT
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      float current = lpotvoltage/150;
+      float mbar = 800 + (260/16*(current-4));
+      meassum[10] = meassum[10] + lpotdata;
+      SP.print(lpotdata);
+      SP.println(" C0 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C0 ipotvoltage 4-20 mA");
+      }
+
+      if (ADS_C1 == 1)                                     // Channel 1 measurement (Potentiometer)
+            {                                      
+      ads1220.config_mux(SE_CH1);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_AVDD);
+      ads1220.config_fir(FIR_50_60);
+      delay(100);
+      int32_t lpotdata = ads1220.read_single_shot();
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      meassum[24] = meassum[24] + ads1220.dac2mv(lpotdata);
+      SP.print(lpotdata);
+      SP.println(" C1 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C1 ipotvoltage");
+      }
+
+      
+     if (ADS_C1 == 2)                                        // Channel 1 measurement (Potentiometer 4-20mA):
+      {    
+      digitalWrite(SW12_DPORT, HIGH);                                                   // Turn on 12V OUT
+      delay(100);                                                                                        
+      ads1220.config_mux(SE_CH1);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_INT);
+      ads1220.config_fir(FIR_NONE);
+      ads1220.config_idac_cur(IDAC_CUR_10);
+      ads1220.config_idac2(IDAC2_OFF);
+      ads1220.config_idac1(IDAC1_REFN0);
+      delay(100); //Delay to powerup IDAC
+      int32_t lpotdata = ads1220.read_single_shot();
+      digitalWrite(SW12_DPORT, LOW);                                                   // Turn off 12V OUT
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      float current = lpotvoltage/150;
+      float mbar = 800 + (260/16*(current-4));
+      meassum[24] = meassum[24] + lpotdata;
+       SP.print(lpotdata);
+      SP.println(" C1 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C1 ipotvoltage 4-20 mA");
+      }
+      
+      if (ADS_C2 == 1)                                    //  Channel 2 measurement (Potentiometer)
+            {                                      
+      ads1220.config_mux(SE_CH2);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_AVDD);
+      ads1220.config_fir(FIR_50_60);
+      delay(100);
+      int32_t lpotdata = ads1220.read_single_shot();
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      meassum[25] = meassum[25] + ads1220.dac2mv(lpotdata);
+      SP.print(lpotdata);
+      SP.println(" C2 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C2 ipotvoltage");
+      }
+
+      
+     if (ADS_C2 == 2)                                        // Channel 2 measurement (Potentiometer 4-20mA):
+      {
+        digitalWrite(SW12_DPORT, HIGH);                                                   // Turn on 12V OUT
+      delay(100);                                           
+      ads1220.config_mux(SE_CH2);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_INT);
+      ads1220.config_fir(FIR_NONE);
+      ads1220.config_idac_cur(IDAC_CUR_10);
+      ads1220.config_idac2(IDAC2_OFF);
+      ads1220.config_idac1(IDAC1_REFN0);
+      delay(100); //Delay to powerup IDAC
+      int32_t lpotdata = ads1220.read_single_shot();
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      digitalWrite(SW12_DPORT, LOW);                                                   // Turn off 12V OUT
+      float current = lpotvoltage/150;
+      float mbar = 800 + (260/16*(current-4));
+      meassum[25] = meassum[25] + lpotdata;
+      SP.print(lpotdata);
+      SP.println(" C2 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C2 ipotvoltage 4-20 mA");
+      }
+
+      if (ADS_C3 == 1)                                     // Channel 3 measurement (Potentiometer)
+            {                                      
+      ads1220.config_mux(SE_CH3);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_AVDD);
+      ads1220.config_fir(FIR_50_60);
+      delay(100);
+      int32_t lpotdata = ads1220.read_single_shot();
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      meassum[26] = meassum[26] + ads1220.dac2mv(lpotdata);
+      SP.print(lpotdata);
+      SP.println(" C3 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C3 ipotvoltage 4-20 mA");
+      }
+
+      
+     if (ADS_C3 == 2)                                        // Channel 3 measurement (Potentiometer 4-20mA):
+      {
+        digitalWrite(SW12_DPORT, HIGH);                                                   // Turn on 12V OUT
+      delay(100);                                           
+      ads1220.config_mux(SE_CH3);
+      ads1220.config_gain(PGA_GAIN_1);
+      ads1220.config_pga(PGA_OFF);
+      ads1220.config_datarate(DR_20SPS);
+      ads1220.config_opmode(OM_NORMAL);
+      ads1220.config_conmode(CM_SINGLE_SHOT);
+      ads1220.config_tempmode(TEMP_OFF);
+      ads1220.config_burnout(BO_OFF);
+      ads1220.config_vref(VREF_INT);
+      ads1220.config_fir(FIR_NONE);
+      ads1220.config_idac_cur(IDAC_CUR_10);
+      ads1220.config_idac2(IDAC2_OFF);
+      ads1220.config_idac1(IDAC1_REFN0);
+      delay(100); //Delay to powerup IDAC
+      int32_t lpotdata = ads1220.read_single_shot();
+      float lpotvoltage = ads1220.dac2mv(lpotdata);
+      digitalWrite(SW12_DPORT, LOW);                                                   // Turn off 12V OUT
+      float current = lpotvoltage/150;
+      float mbar = 800 + (260/16*(current-4));
+      meassum[26] = meassum[26] + lpotdata;
+      SP.print(lpotdata);
+      SP.println(" C3 ipotdata");
+      SP.print(lpotvoltage);
+      SP.println(" C3 ipotvoltage 4-20 mA");
+      }
+
+      
+      
     }
     
     delay(50);                                                          // DELAY after every measurement cycle
@@ -542,6 +721,65 @@ void loop()
 
   if (SET_LCI == true)
   {
+    digitalWrite(I2_PORT, LOW);
+    delay(100);
+     if(I1A == true) // ACTIVATE I1A
+     {
+      digitalWrite(I1_PORT, HIGH);
+      delay (100);
+      if (inkl_a.initialize(BMA4_I2C_ADDR_SECONDARY, RANGE_2G, ODR_6_25_HZ, NORMAL_AVG4, CIC_AVG) == 0) 
+      {
+        SP.println("LCI INKL_1A: Successfully connected to BMA456");
+        inkl_a_init = 1;
+      }
+      else 
+      {
+        SP.println("LCI INKL_A: Connection error - BMA could not be initialized!");
+        inkl_a_init = 0;
+      }
+    }
+    else SP.println("LCI I1A not activated");
+
+     if(I1B == true) // ACTIVATE I1B
+    {
+      digitalWrite(I1_PORT, HIGH);
+      delay (100);
+      if (inkl_b.initialize(BMA4_I2C_ADDR_PRIMARY, RANGE_2G, ODR_6_25_HZ, NORMAL_AVG4, CIC_AVG) == 0) 
+      {
+        SP.println("LCI INKL_B: Successfully connected to BMA456");
+        inkl_b_init = 1;
+      }
+      else 
+      {
+        SP.println("LCI INKL_B: Connection error - BMA could not be initialized!");
+        inkl_b_init = 0;
+      }
+    }
+    else SP.println("I1B not activated");
+
+        
+        for (int i = 0; i < 5; i++) {
+    SP.println("LCI: Measuring line 1");           
+    if (inkl_a_init) {
+      inkl_a.getAcceleration(&x_a, &y_a, &z_a);
+      temp_a = inkl_a.getTemperature();
+        meassum[16] = meassum[16] + (x_a*100);                        // Adjust according to precision of BMA Sensor
+        meassum[17] = meassum[17] + (y_a*100);
+        meassum[18] = meassum[18] + (z_a*100);
+        meassum[19] = meassum[19] + temp_a;
+        }
+    if (inkl_b_init) { 
+      inkl_b.getAcceleration(&x_b, &y_b, &z_b);
+      temp_b = inkl_b.getTemperature();
+      meassum[20] = meassum[20] + (x_b*100);                        // Adjust according to precision of BMA Sensor
+      meassum[21] = meassum[21] + (y_b*100);
+      meassum[22] = meassum[22] + (z_b*100);
+      meassum[23] = meassum[23] + temp_b;
+      }
+    delay(150); // Adapt to measurement frequency selected above
+    }
+
+    
     digitalWrite(I1_PORT, LOW);
     delay (100);         
                                    
@@ -580,10 +818,11 @@ void loop()
     }
     else SP.println("I2B not activated");
 
-    // 5 LCI MEASUREMENTS
+    // Line 2 LCI MEASUREMENTS
     
         for (int i = 0; i < 5; i++) {
-              
+        SP.println("LCI: Measuring line 2");           
+
     if (inkl_a_init) {
       inkl_a.getAcceleration(&x_a, &y_a, &z_a);
       temp_a = inkl_a.getTemperature();
@@ -707,6 +946,20 @@ void loop()
     payload1[i+1] = (((int32_t)(round(meassum[10] / (ADC_VCTR - 1))))>>16);
     i = i+3;
     }
+
+  if(SET_ADC == true && SET_SMN == false)
+    {
+    payload1[i+3] = (int32_t)(round(meassum[24] / (ADC_VCTR - 1)));
+    payload1[i+2] = (((int32_t)(round(meassum[24] / (ADC_VCTR - 1))))>>8);
+    payload1[i+1] = (((int32_t)(round(meassum[24] / (ADC_VCTR - 1))))>>16);
+    payload1[i+6] = (int32_t)(round(meassum[25] / (ADC_VCTR - 1)));
+    payload1[i+5] = (((int32_t)(round(meassum[25] / (ADC_VCTR - 1))))>>8);
+    payload1[i+4] = (((int32_t)(round(meassum[25] / (ADC_VCTR - 1))))>>16);
+    payload1[i+9] = (int32_t)(round(meassum[26] / (ADC_VCTR - 1)));
+    payload1[i+8] = (((int32_t)(round(meassum[26] / (ADC_VCTR - 1))))>>8);
+    payload1[i+7] = (((int32_t)(round(meassum[26] / (ADC_VCTR - 1))))>>16);
+    i = i+9;    
+    }
     
   if(SET_SMN == true)
     {
@@ -785,6 +1038,8 @@ void loop()
           payload1[16], payload1[17], payload1[18]);
   SP.println(report);
 
+  if (SET_SMN == true)
+  {
   long SMNx = (round(meassum[6] / (SMN_VCTR - 1)));
   long SMNy = (round(meassum[7] / (SMN_VCTR - 1)));
   long SMNz = (round(meassum[8] / (SMN_VCTR - 1)));
@@ -792,6 +1047,7 @@ void loop()
   sprintf(report, "Average SMN Inclination X: %6d, Y: %6d, Z: %6d, Temp: %6d",
           SMNx, SMNy, SMNz, SMNt);
   SP.println(report);
+  }
   
   sprintf(report, "SMN X Highbyte %x Lowbyte %x ",
           payload1[22], payload1[23]);
