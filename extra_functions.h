@@ -69,8 +69,8 @@ void DeepSleepMode()
   }
   
   SP.println("Sleeping..");
-  //delay(sleeptime);
-  LowPower.deepSleep(sleeptime);
+  delay(sleeptime);
+  //LowPower.deepSleep(sleeptime);
   Wire.end();
 }
 
@@ -101,32 +101,40 @@ void SensorWakeUp()
   }
 }
 
-void K1_AllOff () {             // turn on pullup resistors
+void K1_AllOff () {             // turn off relais for channel 1
   digitalWrite(A2, LOW);        
   digitalWrite(A3, LOW);
 }
 
-void K1_TurnA () {              // turn on pullup resistors
+void K1_TurnA () {              // turn on measurement resistor for ADS channel 1 
   digitalWrite(A2, HIGH);       
+  digitalWrite(A3, LOW);  
+  delay(50);
+  digitalWrite(A2, LOW);    
+}
+
+void K1_TurnB () {              // turn off measurement resistor for ADS channel 1
+  digitalWrite(A2, LOW);        
+  digitalWrite(A3, HIGH);
+  delay(50);
   digitalWrite(A3, LOW);      
 }
 
-void K1_TurnB () {              // turn on pullup resistors
-  digitalWrite(A2, LOW);        
-  digitalWrite(A3, HIGH);      
-}
-
-void K2_AllOff () {             // turn on pullup resistors
+void K2_AllOff () {             // turn off relais for channel 2
   digitalWrite(A4, LOW);
   digitalWrite(A5, LOW);
 }
 
-void K2_TurnA () {              // turn on pullup resistors
+void K2_TurnA () {              // turn on measurement resistor for ADS channel 2
   digitalWrite(A4, HIGH);       
-  digitalWrite(A5, LOW);       
+  digitalWrite(A5, LOW); 
+    delay(50);
+  digitalWrite(A4, LOW);       
 }
 
-void K2_TurnB () {              // turn on pullup resistors
+void K2_TurnB () {              // turn off measurement resistor for ADS channel 2
   digitalWrite(A4, LOW);       
-  digitalWrite(A5, HIGH);       
+  digitalWrite(A5, HIGH); 
+  delay(50);
+  digitalWrite(A5, LOW);
 }
