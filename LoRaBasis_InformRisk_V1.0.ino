@@ -473,7 +473,7 @@ void loop()
       if (inkl_a_init) 
       {
         inkl_a.getAcceleration(&x_a, &y_a, &z_a);
-        temp_a = inkl_a.getTemperature();
+        temp_a = inkl_a.getTemperature()*10;
         meassum[6] = meassum[6] + (x_a*100);                        // Adjust according to precision of BMA Sensor
         meassum[7] = meassum[7] + (y_a*100);
         meassum[8] = meassum[8] + (z_a*100);
@@ -483,7 +483,7 @@ void loop()
       if (inkl_b_init)
       {
         inkl_b.getAcceleration(&x_b, &y_b, &z_b);
-        temp_b = inkl_b.getTemperature();
+        temp_b = inkl_b.getTemperature()*10;
         meassum[12] = meassum[12] + (x_b*100);                        // Adjust according to precision of BMA Sensor
         meassum[13] = meassum[13] + (y_b*100);
         meassum[14] = meassum[14] + (z_b*100);
@@ -762,7 +762,7 @@ void loop()
     SP.println("LCI: Measuring line 1");           
     if (inkl_a_init) {
       inkl_a.getAcceleration(&x_a, &y_a, &z_a);
-      temp_a = inkl_a.getTemperature();
+      temp_a = inkl_a.getTemperature()*10;
         meassum[16] = meassum[16] + (x_a*100);                        // Adjust according to precision of BMA Sensor
         meassum[17] = meassum[17] + (y_a*100);
         meassum[18] = meassum[18] + (z_a*100);
@@ -770,7 +770,7 @@ void loop()
         }
     if (inkl_b_init) { 
       inkl_b.getAcceleration(&x_b, &y_b, &z_b);
-      temp_b = inkl_b.getTemperature();
+      temp_b = inkl_b.getTemperature()*10;
       meassum[20] = meassum[20] + (x_b*100);                        // Adjust according to precision of BMA Sensor
       meassum[21] = meassum[21] + (y_b*100);
       meassum[22] = meassum[22] + (z_b*100);
@@ -825,7 +825,7 @@ void loop()
 
     if (inkl_a_init) {
       inkl_a.getAcceleration(&x_a, &y_a, &z_a);
-      temp_a = inkl_a.getTemperature();
+      temp_a = inkl_a.getTemperature()*10;
         meassum[16] = meassum[16] + (x_a*100);                        // Adjust according to precision of BMA Sensor
         meassum[17] = meassum[17] + (y_a*100);
         meassum[18] = meassum[18] + (z_a*100);
@@ -833,7 +833,7 @@ void loop()
         }
     if (inkl_b_init) { 
       inkl_b.getAcceleration(&x_b, &y_b, &z_b);
-      temp_b = inkl_b.getTemperature();
+      temp_b = inkl_b.getTemperature()*10;
       meassum[20] = meassum[20] + (x_b*100);                        // Adjust according to precision of BMA Sensor
       meassum[21] = meassum[21] + (y_b*100);
       meassum[22] = meassum[22] + (z_b*100);
