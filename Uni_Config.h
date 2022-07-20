@@ -86,6 +86,7 @@ bool SET_ADC = true;                                                  //
 bool SET_SCL = true;                                                  // High Accuracy inclination sensor (in most nodes that dont have the IMU)
 bool SET_SMN = true;                                                  // Turn additional functions on/off (eg Bodensonde: SET_SMN: "Subsurface Measurement Node")
 bool SET_BARO = true;
+bool SET_LCI = true;
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 // HARDWARE CINFIGURATIONS                                             // Set DPORT to -1 (or any other negative value) to turn off device
