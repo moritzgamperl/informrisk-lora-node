@@ -1,3 +1,8 @@
-// Replace with keys obtained from TheThingsNetwork console
-#define SECRET_APP_EUI "0000000000000001"
-#define SECRET_APP_KEY "01020304050607080910111213141501"
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
+// INFORM@RISK MEASUREMENT NODE -- PASSWORDS
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
+// EDITABLE SETTINGS -- This file contains sensitive infomation (passwords etc.) and is stored encrypted on Arduino.
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#define SECRET_APP_EUI "0000000000000004"                             //Define according to LORA(R) Server
+#define SECRET_APP_KEY "47516986112601100000000000000000"             //Define according to LORA(R) Server

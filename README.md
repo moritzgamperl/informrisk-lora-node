@@ -56,8 +56,8 @@ Parameter | Description
 --------------|-------------
 desig  |  defines type of payload and sensors
 SET_IMU   |   turns the IMU on/off
-SET_ADC   | turns the ADC on/off
-SET_SCL | turns the SCL3300 on/off
+SET_AD24   | turns the ADC on/off
+SET_INCL | turns the SCL3300 on/off
 SET_SMN | turns the SMN overall on/off (all sensors and measurements)
 
 The designator (desig) defines, which type of LoRa node is used. This has implications for the payload, e.g. a LIN payload does not include StpCtr or groundwater data, while a Subsurface Node usually does not include SCL3300 data. In the future, we may add more desig options, but this has to be implemented on the network side as well.
