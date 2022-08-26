@@ -70,7 +70,7 @@ SET_SMP        |    Switch on or off External Subsurface Probes OR Low Cost Incl
 
 ### Active Power Ports
 
-These parameters define which power ports should be active during measurements (does not apply to the SMP measurements)
+These parameters define which power ports should be active during measurements (does not apply to the SMP measurements). While the SET_V12 and SET_SW3V3 ports are the regular ports that can be accessed from the connectors on the PCB, the alternative SW3V3_A and SW3V3_B ports are actually the Analog in ports on the Arduino, which can be set to be used as outputs. They are different from the regular SW3V3 and V12 though, as they can supply less current than the latter. 
 
 **Parameter** | **Description**
 --------------|-------------
