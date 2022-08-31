@@ -48,7 +48,7 @@ arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsu
 agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AGR_ADS1220)
 
 The SPI.h is a standard librarie that can be accessed by just including <SPI.h>. The other libraries used are included in the 'Dependencies' folder. 
-The library ***agr_ads1220.h*** is an adaptation of the standard 'adafruit ads1220' library. The ***arduino_bma456.h*** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456) The modified source codes can be found in the 'Dependencies' folder. 
+The library ***agr_ads1220.h*** is an adaptation of the standard 'adafruit ads1220' library. The ***arduino_bma456.h*** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456). The modified source codes can be found in the 'Dependencies' folder. 
 
 <br />
 
