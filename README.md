@@ -40,11 +40,11 @@ The following libraries are needed for the sensors that can be attached to the n
 **Library**                | **Hardware**                               | **Function**                                                | Resource
 ---------------------------|--------------------------------------------|-------------------------------------------------------------|------------------------
 SPI.h                      |  ---                                       |  This library allows you to communicate with SPI devices    | This library is bundled with every Arduino platform
-I2Cdev.h                   |  ---                                       |  Provides simple and intuitive interfaces to I2C devices    | https://github.com/jrowberg/i2cdevlib/blob/master/Arduino/I2Cdev
-BMP388_DEV.h               |  Bosch BMP388                              |  BMP388 Sensor Library                                      | https://github.com/MartinL1/BMP388_DEV.git
-ICM20948_WE.h              |  ICM20948                                  |  ICM20948 Sensor Library & Dependencies                     | https://github.com/wollewald/ICM20948_WE.git
-arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | Todo: Link to dependencies folder
-agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | Todo: Link to dependencies folder
+I2Cdev.h                   |  ---                                       |  Provides simple and intuitive interfaces to I2C devices    | [Github: I2Cdev.h](https://github.com/jrowberg/i2cdevlib/blob/master/Arduino/I2Cdev)
+BMP388_DEV.h               |  Bosch BMP388                              |  BMP388 Sensor Library                                      | [Github: BMP388_DEV.h](https://github.com/MartinL1/BMP388_DEV.git)
+ICM20948_WE.h              |  ICM20948                                  |  ICM20948 Sensor Library & Dependencies                     | [Github: ICM20948_WE.h](https://github.com/wollewald/ICM20948_WE.git)
+arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AlpGeorisk_BMA456)
+agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AGR_ADS1220)
 
 The SPI.h is a standard librarie that can be accessed by just including <SPI.h>. The other libraries used are included in the 'Dependencies' folder. 
 The library ***agr_ads1220.h*** is an adaptation of the standard 'adafruit ads1220' library. The ***arduino_bma456.h*** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456) The modified source codes can be found in the 'Dependencies' folder. 
