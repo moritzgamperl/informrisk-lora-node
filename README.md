@@ -58,7 +58,7 @@ The parameters which can be controlled in the ***general_config.h*** file are li
 
 ### Sensor State
 
-These parameters control the overall state of the sensors. Here, individual sensors can be turned on/off with one variable (1 = on, 0 = off). If they are set to off, they will not be initialized or measured. 
+These parameters control the overall state of the sensors. Here, individual sensors can be turned on/off with one variable (1 = on, 0 = off). If they are set to off, they will not be initialized, measured or taken into account for data transfer. 
 
 **Parameter**  | **Description**
 ---------------|-------------
