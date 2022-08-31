@@ -43,6 +43,7 @@ SPI.h                      |  ---                                       |  This 
 I2Cdev.h                   |  ---                                       |  Provides simple and intuitive interfaces to I2C devices    | [Github: I2Cdev.h](https://github.com/jrowberg/i2cdevlib/blob/master/Arduino/I2Cdev)
 BMP388_DEV.h               |  Bosch BMP388                              |  BMP388 Sensor Library                                      | [Github: BMP388_DEV.h](https://github.com/MartinL1/BMP388_DEV.git)
 ICM20948_WE.h              |  ICM20948                                  |  ICM20948 Sensor Library & Dependencies                     | [Github: ICM20948_WE.h](https://github.com/wollewald/ICM20948_WE.git)
+SCL3300.h                  |  Murata SCL3300                            |  Murata SCL3300 Sensor Library                              | [Github: SCL3300.h](https://github.com/DavidArmstrong/SCL3300)
 arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AlpGeorisk_BMA456)
 agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AGR_ADS1220)
 
@@ -93,9 +94,9 @@ loopintv         |  Measurement loop interval (ms) -- Defines measurement interv
 sensorstarttime  |  Time to wait after sensors are powered up
 measlength       | measurement duration (ms) for all sensors -- Defines how long sensors should be active.
 
-### LORA(R) Settings
+### LoRa(R) Settings
 
-These parameters define the LORA connection settings for data transmission.
+These parameters define the LoRa connection settings for data transmission.
 
 **Parameter**      | **Description**
 -------------------|-------------
@@ -117,14 +118,14 @@ LORA_TIMEOUT       |   LoRa Connection Timeout in Seconds
 
 ## Payload
 
-The payload is defined automatically from the Packet_Designator. Depending on the availabe/functional sensors, the Packet_Designator is defined. This futhermore automatically decides the information to be sent through the LORA network. The information carried by the Packet_Designator is shown below:
+The payload is defined automatically from the Packet_Designator. Depending on the availabe/functional sensors, the Packet_Designator is defined. This futhermore automatically decides the information to be sent through the LoRa network. The information carried by the Packet_Designator is shown below:
 <!---
 Todo: Upload a table indicating the information passed through the network. Payload distribution should be indicated. 
 -->
 
 ## Downlink commands
 
-Downlink commands can be enable to allow changes in the general_config file through the LORA network. As of now, changes can be made only to the measurement interval. This section can be found under parse commands in the main file.  
+Downlink commands can be enable to allow changes in the general_config file through the LoRa network. As of now, changes can be made only to the measurement interval. This section can be found under parse commands in the main file.  
 1. **commands[i]** - Parameter variable that needs to be changed.
 2. **value[i]** - The value to which the parameter passed through command[i] should be changed to.
 
