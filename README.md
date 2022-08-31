@@ -3,8 +3,7 @@
 This repository hosts the firmware for the Inform@Risk LoRa Nodes. Brief details about the software and hardware used in the project is mentioned below. For further details, visit the following websites:
 1. More general information about the project and contact information can be found on the [AlpGeorisk Website](https://www.informrisk.alpgeorisk.com)
 2. General Overview of the project and it's implementation can be found on the [Project Website](https://www.bmbf-client.de/projekte/informrisk)
-3. All Information on the hardware setup for these nodes can be found on [www.informrisk.alpgeorisk.com](https://www.informrisk.alpgeorisk.com) : (yet to be updated)
-
+3. All Information on the hardware setup for these nodes can be found on [yet to be updated](https://www.informrisk.alpgeorisk.com)
 <!---
 The software comprises five stages. Although these stages are fixed, multiple parameters can be changed to accommodate for varying on-site requirements. For example, the overall measurement duration as well as the measurement frequency for each sensor can be changed. These parameters can not only be changed when installing the node but also remotely via commands transmitted via LoRa communication. Also, for each sensor it is possible to decide whether median or mean values should be sent to the gateway. For example for the accelerometer, it is best to calculate the median of the measured values since it is less sensitive to outliers from external influences (e.g. vibrations, impacts). For all other values, usually mean values are chosen. The calculation is done by the microprocessor to save power and on-air time during LoRa communication, which uses the most power.
 <!---	        
@@ -31,7 +30,7 @@ INCL_config.h                        |   Inclination Sensor Configuration
 setup.h                              |   This file contains the setup for the Inform@Risk PCB 
 SMN_config.h                         |   Subsurface Measurement Probe / Low Cost Inclinometer Configuaton Settings
 
-When setting up a node, changes should only be made in the **general_config.h** and **arduino_secrets.h** files. All flexible parameters in all other files can be changed using the general config file.
+When setting up a node, changes should only be made in the ***general_config.h*** and ***arduino_secrets.h*** files. All flexible parameters in all other files can be changed using the ***general_config.h*** file.
 <br />
 
 ## Sensor Libraries
@@ -48,13 +47,13 @@ arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsu
 agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | Todo: Link to dependencies folder
 
 The SPI.h is a standard librarie that can be accessed by just including <SPI.h>. The other libraries used are included in the 'Dependencies' folder. 
-The library **agr_ads1220.h** is an adaptation of the standard 'adafruit ads1220' library. The **arduino_bma456.h** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456) The modified source codes can be found in the 'Dependencies' folder. 
+The library ***agr_ads1220.h*** is an adaptation of the standard 'adafruit ads1220' library. The ***arduino_bma456.h*** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456) The modified source codes can be found in the 'Dependencies' folder. 
 
 <br />
 
 ## Controllable Parameters
 
-The parameters which can be controlled in the **general_config.h** file are listed in the following sections. For further information, refer to the source code or the hardware information file.
+The parameters which can be controlled in the ***general_config.h*** file are listed in the following sections. For further information, refer to the source code or the hardware information file.
 
 ### Sensor State
 
@@ -126,8 +125,8 @@ Todo: Upload a table indicating the information passed through the network. Payl
 ## Downlink commands
 
 Downlink commands can be enable to allow changes in the general_config file through the LORA network. As of now, changes can be made only to the measurement interval. This section can be found under parse commands in the main file.  
-1. commands[i] - Parameter variable that needs to be changed.
-2. value[i] - The value to which the parameter passed through command[i] should be changed to.
+1. **commands[i]** - Parameter variable that needs to be changed.
+2. **value[i]** - The value to which the parameter passed through command[i] should be changed to.
 
 This section can be further modified to recognize other general parameters and edit them. 
 			
