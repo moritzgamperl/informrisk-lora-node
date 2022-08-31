@@ -3,7 +3,7 @@
 This repository hosts the firmware for the Inform@Risk LoRa Nodes. Brief details about the software and hardware used in the project is mentioned below. For further details, visit the following websites:
 1. More general information about the project and contact information can be found on the [AlpGeorisk Website](https://www.informrisk.alpgeorisk.com)
 2. General Overview of the project and it's implementation can be found on the [Project Website](https://www.bmbf-client.de/projekte/informrisk)
-3. All Information on the hardware setup for these nodes can be found on [www.informrisk.alpgeorisk.com](https://www.informrisk.alpgeorisk.com)
+3. All Information on the hardware setup for these nodes can be found on [www.informrisk.alpgeorisk.com](https://www.informrisk.alpgeorisk.com) : (yet to be updated)
 
 <!---
 The software comprises five stages. Although these stages are fixed, multiple parameters can be changed to accommodate for varying on-site requirements. For example, the overall measurement duration as well as the measurement frequency for each sensor can be changed. These parameters can not only be changed when installing the node but also remotely via commands transmitted via LoRa communication. Also, for each sensor it is possible to decide whether median or mean values should be sent to the gateway. For example for the accelerometer, it is best to calculate the median of the measured values since it is less sensitive to outliers from external influences (e.g. vibrations, impacts). For all other values, usually mean values are chosen. The calculation is done by the microprocessor to save power and on-air time during LoRa communication, which uses the most power.
@@ -29,7 +29,7 @@ extra_functions.h                    |   Programs required for use of Inform@Ris
 IMU_config.h                         |   IMU Sensor Configuration 
 INCL_config.h                        |   Inclination Sensor Configuration 
 setup.h                              |   This file contains the setup for the Inform@Risk PCB 
-SMP_config.h                         |   Subsurface Measurement Probe / Low Cost Inclinometer Configuaton Settings
+SMN_config.h                         |   Subsurface Measurement Probe / Low Cost Inclinometer Configuaton Settings
 
 When setting up a node, changes should only be made in the **general_config.h** and **arduino_secrets.h** files. All flexible parameters in all other files can be changed using the general config file.
 <br />
@@ -47,7 +47,7 @@ ICM20948_WE.h              |  ICM20948                                  |  ICM20
 arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | https://github.com/Seeed-Studio/Seeed_BMA456.git
 agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | Todo: Link to dependencies folder
 
-The library **agr_ads1220.h** is an adaptation of the 'adafruit ads1220' library and can be accessed in this repository ?????
+The library **agr_ads1220.h** is an adaptation of the 'adafruit ads1220' library. The modified source code is uploaded in the dependencies folder. 
 
 <br />
 
@@ -67,11 +67,11 @@ SET_IMU        |    Switch on or off ON-Board Inertial Measurement Unit IMU (ICM
 SET_AD24       |    Switch on or off ON-Board ADC 24bit (ADS1200)
 SET_AD12       |    Switch on or off ON-Board ADC 12bit (Arduino)
 SET_INCL       |    Switch on or off ON-Board High Accuracy inclination sensor (Murata SCL3300)
-SET_SMP        |    Switch on or off External Subsurface Probes OR Low Cost Inclinometer (ONLY inclination sensors)
+SET_SMN        |    Switch on or off External Subsurface Probes OR Low Cost Inclinometer (ONLY inclination sensors)
 
 ### Active Power Ports
 
-These parameters define which power ports should be active during measurements (does not apply to the SMP measurements). While the SET_V12 and SET_SW3V3 ports are the regular ports that can be accessed from the connectors on the PCB, the alternative SW3V3_A and SW3V3_B ports are actually the Analog in ports on the Arduino, which can be set to be used as outputs. They are different from the regular SW3V3 and V12 though, as they can supply less current than the latter. 
+These parameters define which power ports should be active during measurements (does not apply to the SMN measurements). While the SET_V12 and SET_SW3V3 ports are the regular ports that can be accessed from the connectors on the PCB, the alternative SW3V3_A and SW3V3_B ports are actually the Analog in ports on the Arduino, which can be set to be used as outputs. They are different from the regular SW3V3 and V12 though, as they can supply less current than the latter. 
 
 **Parameter** | **Description**
 --------------|-------------
@@ -116,20 +116,9 @@ LORA_TIMEOUT       |   LoRa Connection Timeout in Seconds
 <br />
 
 ## Payload
-Payload definition for PACKET_DESIGNATOR Type 10:
 
-Defines content of Lora package. Each bit stands for a defined value - if TRUE has been transmitted, if FALSE hat not been transmitted
+Todo: have to change this
 
- Bit    | BYTE 0              |  Type    | BYTE 1             |   Type    | BYTE 2               | Type    | BYTE 3               | Type    | Value of Power of 2 associated with position
- -------|---------------------|----------|--------------------|-----------|----------------------|---------|----------------------|---------|:----:
- BIT 0  | ***BATV***          |  U8      | ***AD24-CH0***     |   I24     | ***SMP-I1B***        |  I16 x3 | ***SMP-I3B***        |  I16 x3 | 1
- BIT 1  | ***BARO-T-B***      |  I16,U24 | ***AD24-CH1***     |   I24     | ***SMP-I1B_TEMP***   |  I8     | ***SMP-I3A_TEMP***   |  I8     | 2
- BIT 2  | ***BARO-ALT***      |  U16     | ***AD24-CH2***     |   I24     | ***SMP-I2A***        |  I16 x3 | ***NOT USED***       |         | 4
- BIT 3  | ***IMU-ACC-XYZ***   |  I16 x3  | ***AD24-CH3***     |   I24     | ***SMP-I2A_TEMP***   |  I8     | ***NOT USED***       |         | 6 
- BIT 4  | ***IMU-GYR-XYZ***   |  I16 x3  | ***AD12-CH0***     |   I16     | ***SMP-I2B***        |  I16 x3 | ***NOT USED***       |         | 16
- BIT 5  | ***IMU-MAG-XYZ***   |  I16 x3  | ***AD12-CH1***     |   I16     | ***SMP-I2B_TEMP***   |  I8     | ***NOT USED***       |         | 32
- BIT 6  | ***INCL-XYZ***      |  I24 x3  | ***SMP-I1A***      |   I16 x3  | ***SMP-I3A***        |  I16 x3 | ***NOT USED***       |         | 64 
- BIT 7  | ***INCL-TEMP***     |  I16     | ***SMP-I1A_TEMP*** |   I8      | ***SMP-I3A_TEMP***   |  I8     | ***NOT USED***       |         | 128
 
 ## Downlink commands
 

@@ -15,9 +15,9 @@ bool SET_IMU  =   0;                                                   // ON-Boa
 bool SET_AD24 =   0;                                                   // ON-Board ADC 24bit (ADS1200)                      --> See AD24_config.h for detailed settings
 bool SET_AD12 =   0;                                                   // ON-Board ADC 12bit (Arduino)                      --> See AD12_config.h for detailed settings
 bool SET_INCL =   1;                                                   // ON-Board High Accuracy inclination sensor (Murata SCL3300) (optional) --> See INCL_config.h for detailed settings
-bool SET_SMP  =   0;                                                   // EXTERNAL Subsurface Probes OR Low Cost Inclinometer (ONLY inclination sensors) --> See SMP_config.h for detailed settings
+bool SET_SMN  =   0;                                                   // EXTERNAL Subsurface Probes OR Low Cost Inclinometer (ONLY inclination sensors) --> See SMN_config.h for detailed settings
 
-// Define active power ports during main measurement cycle             // Define which power ports should be active during measurements // This does not apply to SMP measurements
+// Define active power ports during main measurement cycle             // Define which power ports should be active during measurements // This does not apply to SMN measurements
 bool SET_V12     =  0;                                                 // SW12V
 bool SET_SW3V3   =  0;                                                 // First (Standard) SW3V3
 bool SET_SW3V3A  =  0;                                                 // Second SW3V3, As defined below:

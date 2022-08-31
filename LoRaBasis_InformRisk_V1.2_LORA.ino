@@ -25,7 +25,7 @@
 #include "AD24_config.h"
 #include "AD12_config.h"
 #include "INCL_config.h"
-#include "SMP_config.h"
+#include "SMN_config.h"
 #include "extra_functions.h"
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -121,11 +121,11 @@ void setup()
   else SP.println("AD12\t24 BIT ANALOG TO DIGITAL CONVERTER (AD12): OFF");
   SP.println("");
 
-// -- TEST SMP SENSOR
-  if (SET_SMP) {
-    SP.println("SMP\tSUBSURFACE MEASUREMENT PROBE / LOW COST INCLINOMETER (INCLINATION SENSORS): ON");
-    SMP_Init_Measure ();
-    SMP_Finalize();    
+// -- TEST SMN SENSOR
+  if (SET_SMN) {
+    SP.println("SMN\tSUBSURFACE MEASUREMENT PROBE / LOW COST INCLINOMETER (INCLINATION SENSORS): ON");
+    SMN_Init_Measure ();
+    SMN_Finalize();    
   }
   else SP.println("IMU\tSUBSURFACE MEASUREMENT PROBE / LOW COST INCLINOMETER (INCLINATION SENSORS): OFF");
   SP.println(""); 
@@ -251,27 +251,27 @@ void loop()
   SP.println("--------------------------------------------------------------------------------------");
   SP.println ("");
   
- // -- MEASUREMENT OF SMP
-  if (SET_SMP) {
-    SP.print("SMP\tSMP MEASUREMENTS START");
+ // -- MEASUREMENT OF SMN
+  if (SET_SMN) {
+    SP.print("SMN\tSMN MEASUREMENTS START");
     looptime = millis() - loopstart;
     SP.print(" -- Cycle time ");  
     SP.print(looptime);
     SP.println(" ms"); 
-    // Perform SMP Measurements
-    SMP_Init_Measure ();
+    // Perform SMN Measurements
+    SMN_Init_Measure ();
     // Deactivate / Shutdown Sensors and Calculate and Report Results  
-    SP.print("SMP\tSMP MEASUREMENTS ENDED");
+    SP.print("SMN\tSMN MEASUREMENTS ENDED");
     looptime = millis() - loopstart;
     SP.print(" -- Cycle time ");  
     SP.print(looptime);
     SP.println(" ms");  
     SP.println ("");
-    SP.println("SMP MEASUREMENT RESULTS:");
+    SP.println("SMN MEASUREMENT RESULTS:");
     SP.println("--------------------------------------------------------------------------------------");
     SP.println("SENSOR\tDATASET\t\tRESULT\tDIM\tVALUES#\tMEAS#");
     SP.println("--------------------------------------------------------------------------------------");  
-    SMP_Finalize ();
+    SMN_Finalize ();
     SP.println("--------------------------------------------------------------------------------------");
     SP.println (""); 
   }  
@@ -282,14 +282,14 @@ void loop()
   // Defines content of Lora package. Each bit stands for a defined value - if TRUE has been transmitted, if FALSE hat not been transmitted
   //        | BYTE 0          Type    | BYTE 1          Type    | BYTE 2          Type    | BYTE 3          Type    | Power of 2 value associated with position
   // --------------------------------------------------------------------------------------------------------------------------------------
-  // BIT 0  | BATV            U8      | AD24-CH0        I24     | SMP-I1B          I16 x3 | SMP-I3B          I16 x3 | 1
-  // BIT 1  | BARO-T-B        I16,U24 | AD24-CH1        I24     | SMP-I1B_TEMP     I8     | SMP-I3A_TEMP     I8     | 2
-  // BIT 2  | BARO-ALT        U16     | AD24-CH2        I24     | SMP-I2A          I16 x3 | NOT USED                | 4
-  // BIT 3  | IMU-ACC-XYZ     I16 x3  | AD24-CH3        I24     | SMP-I2A_TEMP     I8     | NOT USED                | 6 
-  // BIT 4  | IMU-GYR-XYZ     I16 x3  | AD12-CH0        I16     | SMP-I2B          I16 x3 | NOT USED                | 16
-  // BIT 5  | IMU-MAG-XYZ     I16 x3  | AD12-CH1        I16     | SMP-I2B_TEMP     I8     | NOT USED                | 32
-  // BIT 6  | INCL-XYZ        I24 x3  | SMP-I1A         I16 x3  | SMP-I3A          I16 x3 | NOT USED                | 64 
-  // BIT 7  | INCL-TEMP       I16     | SMP-I1A_TEMP    I8      | SMP-I3A_TEMP     I8     | NOT USED                | 128
+  // BIT 0  | BATV            U8      | AD24-CH0        I24     | SMN-I1B          I16 x3 | SMN-I3B          I16 x3 | 1
+  // BIT 1  | BARO-T-B        I16,U24 | AD24-CH1        I24     | SMN-I1B_TEMP     I8     | SMN-I3A_TEMP     I8     | 2
+  // BIT 2  | BARO-ALT        U16     | AD24-CH2        I24     | SMN-I2A          I16 x3 | NOT USED                | 4
+  // BIT 3  | IMU-ACC-XYZ     I16 x3  | AD24-CH3        I24     | SMN-I2A_TEMP     I8     | NOT USED                | 6 
+  // BIT 4  | IMU-GYR-XYZ     I16 x3  | AD12-CH0        I16     | SMN-I2B          I16 x3 | NOT USED                | 16
+  // BIT 5  | IMU-MAG-XYZ     I16 x3  | AD12-CH1        I16     | SMN-I2B_TEMP     I8     | NOT USED                | 32
+  // BIT 6  | INCL-XYZ        I24 x3  | SMN-I1A         I16 x3  | SMN-I3A          I16 x3 | NOT USED                | 64 
+  // BIT 7  | INCL-TEMP       I16     | SMN-I1A_TEMP    I8      | SMN-I3A_TEMP     I8     | NOT USED                | 128
 
   // -- CREATE PAYLOAD
   // BYTE 0:    U8    Packet Size in Byte

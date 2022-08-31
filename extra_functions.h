@@ -417,14 +417,14 @@ void Packet10_B0_Prepare() {
   // Defines content of Lora package. Each bit stands for a defined value - if TRUE has been transmitted, if FALSE hat not been transmitted
   //        | BYTE 0          Type    | BYTE 1          Type    | BYTE 2          Type    | BYTE 3          Type    | Power of 2 value associated with position
   // --------------------------------------------------------------------------------------------------------------------------------------
-  // BIT 0  | BATV            U8      | AD24-CH0        I24     | SMP-I1B          I16 x3 | SMP-I3B          I16 x3 | 1
-  // BIT 1  | BARO-T-B        I16,U24 | AD24-CH1        I24     | SMP-I1B_TEMP     I8     | SMP-I3A_TEMP     I8     | 2
-  // BIT 2  | BARO-ALT        U16     | AD24-CH2        I24     | SMP-I2A          I16 x3 | NOT USED                | 4
-  // BIT 3  | IMU-ACC-XYZ     I16 x3  | AD24-CH3        I24     | SMP-I2A_TEMP     I8     | NOT USED                | 6 
-  // BIT 4  | IMU-GYR-XYZ     I16 x3  | AD12-CH0        I16     | SMP-I2B          I16 x3 | NOT USED                | 16
-  // BIT 5  | IMU-MAG-XYZ     I16 x3  | AD12-CH1        I16     | SMP-I2B_TEMP     I8     | NOT USED                | 32
-  // BIT 6  | INCL-XYZ        I24 x3  | SMP-I1A         I16 x3  | SMP-I3A          I16 x3 | NOT USED                | 64 
-  // BIT 7  | INCL-TEMP       I16     | SMP-I1A_TEMP    I8      | SMP-I3A_TEMP     I8     | NOT USED                | 128
+  // BIT 0  | BATV            U8      | AD24-CH0        I24     | SMN-I1B          I16 x3 | SMN-I3B          I16 x3 | 1
+  // BIT 1  | BARO-T-B        I16,U24 | AD24-CH1        I24     | SMN-I1B_TEMP     I8     | SMN-I3A_TEMP     I8     | 2
+  // BIT 2  | BARO-ALT        U16     | AD24-CH2        I24     | SMN-I2A          I16 x3 | NOT USED                | 4
+  // BIT 3  | IMU-ACC-XYZ     I16 x3  | AD24-CH3        I24     | SMN-I2A_TEMP     I8     | NOT USED                | 6 
+  // BIT 4  | IMU-GYR-XYZ     I16 x3  | AD12-CH0        I16     | SMN-I2B          I16 x3 | NOT USED                | 16
+  // BIT 5  | IMU-MAG-XYZ     I16 x3  | AD12-CH1        I16     | SMN-I2B_TEMP     I8     | NOT USED                | 32
+  // BIT 6  | INCL-XYZ        I24 x3  | SMN-I1A         I16 x3  | SMN-I3A          I16 x3 | NOT USED                | 64 
+  // BIT 7  | INCL-TEMP       I16     | SMN-I1A_TEMP    I8      | SMN-I3A_TEMP     I8     | NOT USED                | 128
 
   // -- CREATE PAYLOAD
   // BYTE 0:    U8    Packet Size in Byte
@@ -529,16 +529,16 @@ void Packet10_B1_Prepare() {
     Payload_I16((int16_t)(round(AVG_AD12_AIN1*1000)));
     vd1 = vd1+32;
   }
-  if (SET_SMP && I1A && SMP_TRANS_I1A) {
-    //Add SMP-I1A TILT DATA I16 *100 -327,68 .. 327,67
-    Payload_I16((int16_t)(round(AVG_SMP_X[0]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Y[0]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Z[0]*100)));
+  if (SET_SMN && I1A && SMN_TRANS_I1A) {
+    //Add SMN-I1A TILT DATA I16 *100 -327,68 .. 327,67
+    Payload_I16((int16_t)(round(AVG_SMN_X[0]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Y[0]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Z[0]*100)));
     vd1 = vd1+64;
   }
-  if (SET_SMP && I1A && SMP_TRANS_I1A_TEMP) {
-    //Add SMP-I1A TEMPERATURE DATA I8 *1 -128 .. 127
-    Payload_I8((int8_t)(AVG_SMP_TEMP[0]));    
+  if (SET_SMN && I1A && SMN_TRANS_I1A_TEMP) {
+    //Add SMN-I1A TEMPERATURE DATA I8 *1 -128 .. 127
+    Payload_I8((int8_t)(AVG_SMN_TEMP[0]));    
     vd1 = vd1+128;
   }
   //Write value designator byte 0
@@ -551,52 +551,52 @@ void Packet10_B2_Prepare() {
   vd2 = 0;
 
   // -- DATA FROM VALUE DESIGNATOR BYTE 2  
-  if (SET_SMP && I1B && SMP_TRANS_I1B) {
-    //Add SMP-I1B TILT DATA I16 *100 -327,68 .. 327,67    
-    Payload_I16((int16_t)(round(AVG_SMP_X[1]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Y[1]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Z[1]*100)));
+  if (SET_SMN && I1B && SMN_TRANS_I1B) {
+    //Add SMN-I1B TILT DATA I16 *100 -327,68 .. 327,67    
+    Payload_I16((int16_t)(round(AVG_SMN_X[1]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Y[1]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Z[1]*100)));
     vd2 = vd2+1;
   }
-  if (SET_SMP && I1B && SMP_TRANS_I1B_TEMP) {
-    //Add SMP-I1B TEMPERATURE DATA I8 *1 -128 .. 127
-    Payload_I8((int8_t)(AVG_SMP_TEMP[1]));
+  if (SET_SMN && I1B && SMN_TRANS_I1B_TEMP) {
+    //Add SMN-I1B TEMPERATURE DATA I8 *1 -128 .. 127
+    Payload_I8((int8_t)(AVG_SMN_TEMP[1]));
     vd2 = vd2+2;
   }
-  if (SET_SMP && I2A && SMP_TRANS_I1B) {
-    //Add SMP-I2A TILT DATA I16 *100 -327,68 .. 327,67
-    Payload_I16((int16_t)(round(AVG_SMP_X[2]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Y[2]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Z[2]*100)));
+  if (SET_SMN && I2A && SMN_TRANS_I1B) {
+    //Add SMN-I2A TILT DATA I16 *100 -327,68 .. 327,67
+    Payload_I16((int16_t)(round(AVG_SMN_X[2]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Y[2]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Z[2]*100)));
     vd2 = vd2+4;
   }
-  if (SET_SMP && I2A && SMP_TRANS_I1B_TEMP) {
-    //Add SMP-I2A TEMPERATURE DATA I8 *1 -128 .. 127
-    Payload_I8((int8_t)(AVG_SMP_TEMP[2]));
+  if (SET_SMN && I2A && SMN_TRANS_I1B_TEMP) {
+    //Add SMN-I2A TEMPERATURE DATA I8 *1 -128 .. 127
+    Payload_I8((int8_t)(AVG_SMN_TEMP[2]));
     vd2 = vd2+8;
   }
-    if (SET_SMP && I2B && SMP_TRANS_I1B) {
-    //Add SMP-I2B TILT DATA I16 *100 -327,68 .. 327,67
-    Payload_I16((int16_t)(round(AVG_SMP_X[3]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Y[3]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Z[3]*100)));
+    if (SET_SMN && I2B && SMN_TRANS_I1B) {
+    //Add SMN-I2B TILT DATA I16 *100 -327,68 .. 327,67
+    Payload_I16((int16_t)(round(AVG_SMN_X[3]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Y[3]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Z[3]*100)));
     vd2 = vd2+16;
   }
-  if (SET_SMP && I2B && SMP_TRANS_I2B_TEMP) {
-    //Add SMP-I2B TEMPERATURE DATA I8 *1 -128 .. 127
-    Payload_I8((int8_t)(AVG_SMP_TEMP[3]));
+  if (SET_SMN && I2B && SMN_TRANS_I2B_TEMP) {
+    //Add SMN-I2B TEMPERATURE DATA I8 *1 -128 .. 127
+    Payload_I8((int8_t)(AVG_SMN_TEMP[3]));
     vd2 = vd2+32;
   }
-  if (SET_SMP && I3A && SMP_TRANS_I3A) {
-    //NOT IMPLEMENTED YET -- SMP-I3A TILT DATA I16 *100 -327,68 .. 327,67
-    Payload_I16((int16_t)(round(AVG_SMP_X[4]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Y[4]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Z[4]*100)));
+  if (SET_SMN && I3A && SMN_TRANS_I3A) {
+    //NOT IMPLEMENTED YET -- SMN-I3A TILT DATA I16 *100 -327,68 .. 327,67
+    Payload_I16((int16_t)(round(AVG_SMN_X[4]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Y[4]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Z[4]*100)));
     vd2 = vd2+64;
   }
-  if (SET_SMP && I3A && SMP_TRANS_I3A_TEMP) {
-    //NOT IMPLEMENTED YET -- Add SMP-I3A TEMPERATURE DATA I8 *1 -128 .. 127
-    Payload_I8((int8_t)(AVG_SMP_TEMP[4]));
+  if (SET_SMN && I3A && SMN_TRANS_I3A_TEMP) {
+    //NOT IMPLEMENTED YET -- Add SMN-I3A TEMPERATURE DATA I8 *1 -128 .. 127
+    Payload_I8((int8_t)(AVG_SMN_TEMP[4]));
     vd2 = vd2+128;
   }
   //Write value designator byte 0
@@ -607,16 +607,16 @@ void Packet10_B2_Prepare() {
 void Packet10_B3_Prepare() {
   // -- CREATE VALUE DESIGNATOR FOR PACKET_DESIGNATOR_TYPE 10 -- BYTE 3
   vd3 = 0;
-  if (SET_SMP && I3B && SMP_TRANS_I3B) {
-    //NOT IMPLEMENTED YET -- SMP-I3B TILT DATA I16 *100 -327,68 .. 327,67
-    Payload_I16((int16_t)(round(AVG_SMP_X[5]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Y[5]*100)));
-    Payload_I16((int16_t)(round(AVG_SMP_Z[5]*100)));
+  if (SET_SMN && I3B && SMN_TRANS_I3B) {
+    //NOT IMPLEMENTED YET -- SMN-I3B TILT DATA I16 *100 -327,68 .. 327,67
+    Payload_I16((int16_t)(round(AVG_SMN_X[5]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Y[5]*100)));
+    Payload_I16((int16_t)(round(AVG_SMN_Z[5]*100)));
     vd3 = vd3+1;
   }
-  if (SET_SMP && I3B && SMP_TRANS_I3B_TEMP) {
-    //NOT IMPLEMENTED YET -- Add SMP-I3B TEMPERATURE DATA I8 *1 -128 .. 127
-    Payload_I8((int8_t)(AVG_SMP_TEMP[5]));
+  if (SET_SMN && I3B && SMN_TRANS_I3B_TEMP) {
+    //NOT IMPLEMENTED YET -- Add SMN-I3B TEMPERATURE DATA I8 *1 -128 .. 127
+    Payload_I8((int8_t)(AVG_SMN_TEMP[5]));
     vd3 = vd3+2;
   }
   payload_temp[6] = vd3;
@@ -739,4 +739,3 @@ void IRloramodemSetup () {
   lora_connect_end:
   SP.println("");
 }
-
