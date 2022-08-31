@@ -18,7 +18,7 @@
 */
 
 #include "setup.h"
-#include "00_general_config.h"
+#include "general_config.h"
 #include "BATV_config.h"
 #include "BARO_config.h"
 #include "IMU_config.h"

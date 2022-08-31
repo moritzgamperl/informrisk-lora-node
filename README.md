@@ -40,20 +40,21 @@ The following libraries are needed for the sensors that can be attached to the n
 
 **Library**                | **Hardware**                               | **Function**                                                | Resource
 ---------------------------|--------------------------------------------|-------------------------------------------------------------|------------------------
-I2Cdev.h                   |  ---                                       |  Provides simple and intuitive interfaces to I2C devices    | https://github.com/jrowberg/i2cdevlib.git
-SPI.h                      |  ---                                       |  This library allows you to communicate with SPI devices    | https://github.com/PaulStoffregen/SPI.git
+SPI.h                      |  ---                                       |  This library allows you to communicate with SPI devices    | This library is bundled with every Arduino platform
+I2Cdev.h                   |  ---                                       |  Provides simple and intuitive interfaces to I2C devices    | https://github.com/jrowberg/i2cdevlib/blob/master/Arduino/I2Cdev
 BMP388_DEV.h               |  Bosch BMP388                              |  BMP388 Sensor Library                                      | https://github.com/MartinL1/BMP388_DEV.git
 ICM20948_WE.h              |  ICM20948                                  |  ICM20948 Sensor Library & Dependencies                     | https://github.com/wollewald/ICM20948_WE.git
-arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | https://github.com/Seeed-Studio/Seeed_BMA456.git
+arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | Todo: Link to dependencies folder
 agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | Todo: Link to dependencies folder
 
-The library **agr_ads1220.h** is an adaptation of the 'adafruit ads1220' library. The modified source code is uploaded in the dependencies folder. 
+The SPI.h is a standard librarie that can be accessed by just including <SPI.h>. The other libraries used are included in the 'Dependencies' folder. 
+The library **agr_ads1220.h** is an adaptation of the standard 'adafruit ads1220' library. The **arduino_bma456.h** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456) The modified source codes can be found in the 'Dependencies' folder. 
 
 <br />
 
 ## Controllable Parameters
 
-The parameters which can be controlled in the general_config.h file are listed in the following sections. For further information, refer to the individual files or the hardware file ????
+The parameters which can be controlled in the **general_config.h** file are listed in the following sections. For further information, refer to the source code or the hardware information file.
 
 ### Sensor State
 
@@ -90,7 +91,7 @@ Timing parameters for loop intervals during measurement cycles.
 **Parameter**    | **Description**
 -----------------|-------------
 loopintv         |  Measurement loop interval (ms) -- Defines measurement interval.
-sensorstarttime  |   time to wait after sensors are powered up
+sensorstarttime  |  Time to wait after sensors are powered up
 measlength       | measurement duration (ms) for all sensors -- Defines how long sensors should be active.
 
 ### LORA(R) Settings
@@ -107,7 +108,7 @@ LORA_CH_ACT        |   LoRa Active Channels: {1,2,3,4,5,6,7,8}. Custom list of c
 LORA_TIMEOUT       |   LoRa Connection Timeout in Seconds
 
 
-### Other Settings?
+### Other Settings
 
 1. Packet_Designator - This defines the payload type, it is automatically updated depending on the sensors that are active
 2. SET_SER1  - Default value is 0, then serial data is passed through the USB. If changed to 1, it serial data is sent through the TX/RX pin
@@ -117,14 +118,16 @@ LORA_TIMEOUT       |   LoRa Connection Timeout in Seconds
 
 ## Payload
 
-Todo: have to change this
-
+The payload is defined automatically from the Packet_Designator. Depending on the availabe/functional sensors, the Packet_Designator is defined. This futhermore automatically decides the information to be sent through the LORA network. The information carried by the Packet_Designator is shown below:
+<!---
+Todo: Upload a table indicating the information passed through the network. Payload distribution should be indicated. 
+-->
 
 ## Downlink commands
 
 Downlink commands can be enable to allow changes in the general_config file through the LORA network. As of now, changes can be made only to the measurement interval. This section can be found under parse commands in the main file.  
+1. commands[i] - Parameter variable that needs to be changed.
+2. value[i] - The value to which the parameter passed through command[i] should be changed to.
+
+This section can be further modified to recognize other general parameters and edit them. 
 			
-## Future functions
-- [ ] OTA Firmware update
-- [ ] More downlink commands if needed 
-- [ ] Data storage on Arduino?
