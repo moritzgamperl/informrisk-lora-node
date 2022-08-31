@@ -47,7 +47,7 @@ SCL3300.h                  |  Murata SCL3300                            |  Murat
 arduino_bma456.h           |  Seeed Studio Step Counter / Bosch BMA456  |  Subsurface Measurement Probe/ Inclinometer Configurations  | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AlpGeorisk_BMA456)
 agr_ads1220.h              | Texas Instruments ADS1220                  |  AGR ADS1220 Library (edited by AlpGeorisk)                 | [Dependencies Folder: arduino_bma456.h](https://github.com/moritzgamperl/informrisk-lora-node/tree/V1.2/Dependencies/AGR_ADS1220)
 
-The SPI.h is a standard librarie that can be accessed by just including <SPI.h>. The other libraries used are included in the 'Dependencies' folder. 
+The SPI.h is a standard library that can be accessed by just including <SPI.h>. The other libraries used are included in the 'Dependencies' folder. 
 The library ***agr_ads1220.h*** is an adaptation of the standard 'adafruit ads1220' library. The ***arduino_bma456.h*** is also an adaptation from the [Seeed BMA456 Library](https://github.com/Seeed-Studio/Seeed_BMA456) The modified source codes can be found in the 'Dependencies' folder. 
 
 <br />
@@ -119,9 +119,17 @@ LORA_TIMEOUT       |   LoRa Connection Timeout in Seconds
 ## Payload
 
 The payload is defined automatically from the Packet_Designator. Depending on the availabe/functional sensors, the Packet_Designator is defined. This futhermore automatically decides the information to be sent through the LoRa network. The information carried by the Packet_Designator is shown below:
-<!---
-Todo: Upload a table indicating the information passed through the network. Payload distribution should be indicated. 
--->
+
+ Bit    | BYTE 0              |  Type    | BYTE 1             |   Type    | BYTE 2               | Type    | BYTE 3               | Type    | Value of Power of 2 associated with position
+ -------|---------------------|----------|--------------------|-----------|----------------------|---------|----------------------|---------|:----:
+ BIT 0  | ***BATV***          |  U8      | ***AD24-CH0***     |   I24     | ***SMP-I1B***        |  I16 x3 | ***SMP-I3B***        |  I16 x3 | 1
+ BIT 1  | ***BARO-T-B***      |  I16,U24 | ***AD24-CH1***     |   I24     | ***SMP-I1B_TEMP***   |  I8     | ***SMP-I3A_TEMP***   |  I8     | 2
+ BIT 2  | ***BARO-ALT***      |  U16     | ***AD24-CH2***     |   I24     | ***SMP-I2A***        |  I16 x3 | ***NOT USED***       |         | 4
+ BIT 3  | ***IMU-ACC-XYZ***   |  I16 x3  | ***AD24-CH3***     |   I24     | ***SMP-I2A_TEMP***   |  I8     | ***NOT USED***       |         | 6 
+ BIT 4  | ***IMU-GYR-XYZ***   |  I16 x3  | ***AD12-CH0***     |   I16     | ***SMP-I2B***        |  I16 x3 | ***NOT USED***       |         | 16
+ BIT 5  | ***IMU-MAG-XYZ***   |  I16 x3  | ***AD12-CH1***     |   I16     | ***SMP-I2B_TEMP***   |  I8     | ***NOT USED***       |         | 32
+ BIT 6  | ***INCL-XYZ***      |  I24 x3  | ***SMP-I1A***      |   I16 x3  | ***SMP-I3A***        |  I16 x3 | ***NOT USED***       |         | 64 
+ BIT 7  | ***INCL-TEMP***     |  I16     | ***SMP-I1A_TEMP*** |   I8      | ***SMP-I3A_TEMP***   |  I8     | ***NOT USED***       |         | 128
 
 ## Downlink commands
 
