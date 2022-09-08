@@ -28,7 +28,7 @@ int  PW_3V3_B    =  AIN1_12;                                           // Possib
 // Setup LORA(R) Connection
 #define LORA_BAND    US915                                             //LoRa Band: EU868 - Europe; US915 - USA/Colombia; AS923 - Australia;                                                             For I@R Colombia: US915
 #define LORA_ADR     1                                                 //LoRa Automatic Data Rate: true - Data rate is controlled by LoRa Server; false - Data rate is set to a fixed value;             For I@R Colombia: 1
-#define LORA_DR      5                                                 //LoRa Data Rate: 1 ... 10; Valdid values depend on selected LoRa Band; See LoRaWAN Regional Parameters for Details               For I@R Colombia: 5
+#define LORA_DR      5                                                 //LoRa Data Rate: 1 ... 10; Valid values depend on selected LoRa Band; See LoRaWAN Regional Parameters for Details               For I@R Colombia: 5
 #define LORA_CH_DEF  0                                                 //LoRa Channel Plan: true: use default channel plan for selected Band; false: use channel plan as defined in LORA_CH_ACTIVE       For I@R Colombia: 0
 #define LORA_CH_ACT  {8,9,10,11,12,13,14,15,64}                        //LoRa Active Channels: {1,2,3,4,5,6,7,8} Custom list of channels to be used; See LoRaWAN Regional Parameters for Details;        For I@R Colombia: {8,9,10,11,12,13,14,15,64}
 #define LORA_TIMEOUT 120                                               //LoRa Connection Timeout in Seconds
